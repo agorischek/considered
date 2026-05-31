@@ -1,0 +1,56 @@
+exclude:
+    - "**/*_test.go"
+
+standards:
+    scc.code_lines:
+        max: 500
+    scc.complexity:
+        max: 50
+    filesystem.bytes:
+        max: 50000
+    filesystem.longest_line:
+        max: 140
+
+variances:
+    README.md:
+        kind: architectural
+        reason: >
+            Markdown tables and example blocks read more clearly on single
+            lines than wrapped to a column limit.
+        metrics:
+            filesystem.longest_line:
+                max: 151
+    internal/considered/report.go:
+        kind: architectural
+        reason: >
+            Report formatting keeps each record's layout in one fmt string so
+            the output shape is visible at a glance.
+        metrics:
+            filesystem.longest_line:
+                max: 220
+            scc.complexity:
+                max: 60
+    internal/considered/config.go:
+        kind: architectural
+        reason: >
+            Configuration validation deliberately enumerates every field check
+            in one place so the rules are easy to audit.
+        metrics:
+            scc.complexity:
+                max: 60
+    internal/considered/providers.go:
+        kind: architectural
+        reason: >
+            Provider dispatch and the filesystem walk are the integration
+            seam between the policy engine and the outside world.
+        metrics:
+            scc.complexity:
+                max: 60
+    internal/considered/variance.go:
+        kind: architectural
+        reason: >
+            The interactive variance-add flow branches over which fields were
+            supplied versus prompted.
+        metrics:
+            scc.complexity:
+                max: 75
