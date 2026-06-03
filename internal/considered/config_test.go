@@ -2,6 +2,7 @@ package considered
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -26,6 +27,7 @@ func TestConfigWarnsOnVarianceWithoutStandard(t *testing.T) {
 
 func TestConfigValidateRequiresNamespacedStandardsAndVarianceRationale(t *testing.T) {
 	cfg := Config{
+		Exclude: ExcludeConfig{Categories: []string{"typo"}},
 		Standards: map[string]Boundary{
 			"code_lines": {Max: Float64(10)},
 		},
@@ -38,10 +40,20 @@ func TestConfigValidateRequiresNamespacedStandardsAndVarianceRationale(t *testin
 		t.Fatal("expected validation errors")
 	}
 	msg := err.Error()
-	for _, want := range []string{"must be namespaced", "unknown kind", "must define reason"} {
+	for _, want := range []string{"must be namespaced", "unknown kind", "must define reason", "exclude category"} {
 		if !strings.Contains(msg, want) {
 			t.Fatalf("expected %q in %q", want, msg)
 		}
+	}
+}
+
+func TestConfigValidateRejectsBadExcludePathGlob(t *testing.T) {
+	cfg := Config{
+		Exclude:   ExcludeConfig{Paths: []string{"["}},
+		Standards: map[string]Boundary{"filesystem.bytes": {Max: Float64(1)}},
+	}
+	if err := cfg.Validate(); err == nil || !strings.Contains(err.Error(), "exclude pattern") {
+		t.Fatalf("expected exclude pattern error, got %v", err)
 	}
 }
 
@@ -93,6 +105,76 @@ func TestLoadAndSaveConfig(t *testing.T) {
 	}
 	if loaded.Variances["x.go"].Kind != "generated" {
 		t.Fatalf("variance was not round-tripped: %#v", loaded.Variances)
+	}
+}
+
+func TestLoadConfigAcceptsLegacyExcludePathList(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, ConfigName)
+	if err := os.WriteFile(path, []byte("exclude:\n  - src/generated/**\nstandards:\n  filesystem.bytes:\n    max: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := LoadConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.Exclude.Paths) != 1 || cfg.Exclude.Paths[0] != "src/generated/**" {
+		t.Fatalf("legacy exclude list was not loaded as paths: %#v", cfg.Exclude)
+	}
+}
+
+func TestExcludeCategoriesAndPaths(t *testing.T) {
+	cfg := Config{Exclude: ExcludeConfig{
+		Categories: []string{"tests", "vendored", "dependencies"},
+		Paths:      []string{"src/generated/**"},
+	}}
+	excluded := []string{
+		"ExampleTest.php",
+		"Tests/AppTests.swift",
+		"cypress/e2e/login.cy.ts",
+		"example_test.go",
+		"package.test.mjs",
+		"src/FooTest.java",
+		"src/test/kotlin/FooTest.kt",
+		"src/foo_test.go",
+		"test_math.py",
+		"tests/thing.go",
+		"third_party/lib/main.go",
+		"node_modules/pkg/index.js",
+		"src/generated/schema.go",
+	}
+	for _, subject := range excluded {
+		if !cfg.IsExcluded(subject) {
+			t.Fatalf("expected %s to be excluded", subject)
+		}
+	}
+	if cfg.IsExcluded("src/main.go") {
+		t.Fatal("src/main.go should not be excluded")
+	}
+}
+
+func TestFilterRecordsHonorsGitignore(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ".gitignore"), []byte("ignored.txt\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(t, dir, "init")
+	records := []MetricRecord{
+		{Subject: "ignored.txt", Values: map[string]float64{"filesystem.bytes": 1}},
+		{Subject: "kept.txt", Values: map[string]float64{"filesystem.bytes": 1}},
+	}
+	filtered := (Config{Exclude: ExcludeConfig{Gitignored: true}}).FilterRecords(dir, records)
+	if len(filtered) != 1 || filtered[0].Subject != "kept.txt" {
+		t.Fatalf("unexpected filtered records: %#v", filtered)
+	}
+}
+
+func runGit(t *testing.T, dir string, args ...string) {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git %v failed: %v\n%s", args, err, string(out))
 	}
 }
 

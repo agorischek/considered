@@ -128,7 +128,13 @@ kinds:
   - compatibility
 
 exclude:
-  - "**/*_test.go"
+  gitignored: true
+  categories:
+    - tests
+    - vendored
+    - dependencies
+  paths:
+    - src/generated/**
 
 standards:
   scc.code_lines:
@@ -165,11 +171,16 @@ variances:
 
 - **`kinds`** — additional variance kinds beyond the built-ins
   (`architectural`, `debt`, `generated`).
-- **`exclude`** — glob patterns for files that no standard should measure
-  (tests, vendored code, fixtures). Patterns use doublestar semantics, so
-  `**` crosses directory boundaries (`**/*_test.go`). Use this for whole
-  categories of files; use a `variance` to document a single reviewed
-  departure. A file that is excluded is simply not measured.
+- **`exclude`** — files that no standard should measure. `gitignored`
+  removes paths matched by Git ignore rules, `categories` applies semantic
+  presets (`tests`, `vendored`, `dependencies`), and `paths` accepts custom
+  doublestar globs such as `src/generated/**`. The `tests` category follows
+  default or conventional discovery patterns from common runners and build
+  tools, including Jest, Vitest, Node, Bun, Deno, pytest, unittest, Go,
+  Cargo, Maven Surefire, Gradle, Mocha, Cypress, Playwright, RSpec, and
+  PHPUnit. Use exclusions for whole functional categories; use a `variance`
+  to document a single reviewed departure. A file that is excluded is simply
+  not measured.
 - **`standards`** — boundaries keyed by metric. Each entry takes `min`,
   `max`, or both. Metric names must be namespaced.
 - **`variances`** — keyed by subject path. Each requires a `kind` (built-in

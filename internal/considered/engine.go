@@ -10,6 +10,7 @@ func Check(ctx context.Context, root string, cfg Config) (Report, error) {
 	if err != nil {
 		return Report{}, err
 	}
+	records = cfg.FilterRecords(root, records)
 	return Evaluate(cfg, records), nil
 }
 

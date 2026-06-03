@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -14,9 +15,153 @@ import (
 
 var BuiltInKinds = []string{"architectural", "debt", "generated"}
 
+var excludeCategoryPatterns = map[string][]string{
+	"dependencies": {
+		"node_modules/**",
+		"**/node_modules/**",
+		"bower_components/**",
+		"**/bower_components/**",
+		"jspm_packages/**",
+		"**/jspm_packages/**",
+		".pnpm-store/**",
+		"**/.pnpm-store/**",
+		".yarn/**",
+		"**/.yarn/**",
+		".venv/**",
+		"**/.venv/**",
+		"venv/**",
+		"**/venv/**",
+		"env/**",
+		"**/env/**",
+	},
+	"tests": {
+		// Conventional test directories used by pytest, Cargo, Gradle, Mocha,
+		// Playwright, RSpec, PHPUnit, and many language communities.
+		"test/**",
+		"**/test/**",
+		"tests/**",
+		"**/tests/**",
+		"Tests/**",
+		"**/Tests/**",
+		"spec/**",
+		"**/spec/**",
+		"specs/**",
+		"**/specs/**",
+		"__tests__/**",
+		"**/__tests__/**",
+
+		// JavaScript and TypeScript runners: Jest, Vitest, Node test runner,
+		// Bun, Deno, Mocha, Cypress, and Playwright.
+		"**/*.test.js",
+		"**/*.test.cjs",
+		"**/*.test.mjs",
+		"**/*.test.jsx",
+		"**/*.test.ts",
+		"**/*.test.cts",
+		"**/*.test.mts",
+		"**/*.test.tsx",
+		"**/*.spec.js",
+		"**/*.spec.cjs",
+		"**/*.spec.mjs",
+		"**/*.spec.jsx",
+		"**/*.spec.ts",
+		"**/*.spec.cts",
+		"**/*.spec.mts",
+		"**/*.spec.tsx",
+		"**/*-test.js",
+		"**/*-test.cjs",
+		"**/*-test.mjs",
+		"**/*-test.jsx",
+		"**/*-test.ts",
+		"**/*-test.cts",
+		"**/*-test.mts",
+		"**/*-test.tsx",
+		"**/*_test.js",
+		"**/*_test.cjs",
+		"**/*_test.mjs",
+		"**/*_test.jsx",
+		"**/*_test.ts",
+		"**/*_test.cts",
+		"**/*_test.mts",
+		"**/*_test.tsx",
+		"**/*_spec.js",
+		"**/*_spec.jsx",
+		"**/*_spec.ts",
+		"**/*_spec.tsx",
+		"**/test-*.js",
+		"**/test-*.cjs",
+		"**/test-*.mjs",
+		"**/test-*.ts",
+		"**/test-*.cts",
+		"**/test-*.mts",
+		"**/test.js",
+		"**/test.cjs",
+		"**/test.mjs",
+		"**/test.ts",
+		"**/test.cts",
+		"**/test.mts",
+		"cypress/e2e/**",
+		"**/cypress/e2e/**",
+		"**/*.cy.js",
+		"**/*.cy.jsx",
+		"**/*.cy.ts",
+		"**/*.cy.tsx",
+
+		// Python unittest and pytest.
+		"**/test*.py",
+		"**/test_*.py",
+		"**/*_test.py",
+
+		// Go.
+		"**/*_test.go",
+
+		// Rust Cargo integration tests and Java/JVM source-set conventions.
+		"src/test/**",
+		"**/src/test/**",
+		"src/integrationTest/**",
+		"**/src/integrationTest/**",
+		"src/functionalTest/**",
+		"**/src/functionalTest/**",
+
+		// Maven Surefire and common JUnit/TestNG class naming conventions.
+		"**/Test*.java",
+		"**/*Test.java",
+		"**/*Tests.java",
+		"**/*TestCase.java",
+		"**/*IT.java",
+		"**/*ITCase.java",
+
+		// Ruby RSpec and PHP PHPUnit.
+		"**/*_spec.rb",
+		"**/*Test.php",
+		"**/*.phpt",
+	},
+	"vendored": {
+		"vendor/**",
+		"**/vendor/**",
+		"third_party/**",
+		"**/third_party/**",
+		"third-party/**",
+		"**/third-party/**",
+		"external/**",
+		"**/external/**",
+		"vendored/**",
+		"**/vendored/**",
+	},
+}
+
 func DefaultConfig() Config {
 	return Config{
 		Kinds: []string{"performance", "compatibility"},
+		Exclude: ExcludeConfig{
+			Gitignored: true,
+			Categories: []string{
+				"tests",
+				"vendored",
+				"dependencies",
+			},
+			Paths: []string{},
+		},
 		Standards: map[string]Boundary{
 			"scc.code_lines":          {Max: Float64(500)},
 			"scc.complexity":          {Max: Float64(50)},
@@ -67,11 +212,37 @@ func WriteDefaultConfig(root string) (string, error) {
 	return path, SaveConfig(path, DefaultConfig())
 }
 
-// IsExcluded reports whether the subject matches any exclude glob and so
-// should be left unmeasured. Patterns use doublestar semantics, so "**"
-// crosses directory boundaries (e.g. "**/*_test.go").
+func (e *ExcludeConfig) UnmarshalYAML(value *yaml.Node) error {
+	switch value.Kind {
+	case yaml.SequenceNode:
+		var paths []string
+		if err := value.Decode(&paths); err != nil {
+			return err
+		}
+		e.Paths = paths
+		return nil
+	case yaml.MappingNode:
+		type raw ExcludeConfig
+		var decoded raw
+		if err := value.Decode(&decoded); err != nil {
+			return err
+		}
+		*e = ExcludeConfig(decoded)
+		return nil
+	case yaml.ScalarNode:
+		if value.Tag == "!!null" {
+			return nil
+		}
+	}
+	return fmt.Errorf("exclude must be a mapping or a list of paths")
+}
+
+// IsExcluded reports whether the subject matches configured category or path
+// exclusions. Gitignore exclusions need repository context and are applied by
+// FilterRecords.
 func (c Config) IsExcluded(subject string) bool {
-	for _, pattern := range c.Exclude {
+	subject = normalizeSubject(subject)
+	for _, pattern := range c.Exclude.Patterns() {
 		if ok, err := doublestar.Match(pattern, subject); err == nil && ok {
 			return true
 		}
@@ -79,9 +250,49 @@ func (c Config) IsExcluded(subject string) bool {
 	return false
 }
 
+func (c Config) FilterRecords(root string, records []MetricRecord) []MetricRecord {
+	ignored := map[string]bool{}
+	if c.Exclude.Gitignored {
+		ignored = gitignoredSubjects(root, records)
+	}
+	filtered := records[:0]
+	for _, record := range records {
+		subject := normalizeSubject(record.Subject)
+		if ignored[subject] || c.IsExcluded(subject) {
+			continue
+		}
+		record.Subject = subject
+		filtered = append(filtered, record)
+	}
+	return filtered
+}
+
+func (e ExcludeConfig) Patterns() []string {
+	var patterns []string
+	for _, category := range e.Categories {
+		patterns = append(patterns, excludeCategoryPatterns[category]...)
+	}
+	patterns = append(patterns, e.Paths...)
+	return patterns
+}
+
+func KnownExcludeCategories() []string {
+	categories := make([]string, 0, len(excludeCategoryPatterns))
+	for category := range excludeCategoryPatterns {
+		categories = append(categories, category)
+	}
+	sort.Strings(categories)
+	return categories
+}
+
 func (c Config) Validate() error {
 	var problems []string
-	for _, pattern := range c.Exclude {
+	for _, category := range c.Exclude.Categories {
+		if _, ok := excludeCategoryPatterns[category]; !ok {
+			problems = append(problems, fmt.Sprintf("exclude category %q is unknown; known categories are: %s", category, strings.Join(KnownExcludeCategories(), ", ")))
+		}
+	}
+	for _, pattern := range c.Exclude.Paths {
 		if !doublestar.ValidatePattern(pattern) {
 			problems = append(problems, fmt.Sprintf("exclude pattern %q is not a valid glob", pattern))
 		}
@@ -154,4 +365,41 @@ func (c Config) Warnings() []string {
 	}
 	sort.Strings(warnings)
 	return warnings
+}
+
+func gitignoredSubjects(root string, records []MetricRecord) map[string]bool {
+	subjects := make([]string, 0, len(records))
+	seen := map[string]bool{}
+	for _, record := range records {
+		subject := normalizeSubject(record.Subject)
+		if !seen[subject] {
+			seen[subject] = true
+			subjects = append(subjects, subject)
+		}
+	}
+	if len(subjects) == 0 {
+		return map[string]bool{}
+	}
+
+	cmd := exec.Command("git", "-C", root, "check-ignore", "-z", "--stdin")
+	cmd.Stdin = strings.NewReader(strings.Join(subjects, "\x00") + "\x00")
+	output, err := cmd.Output()
+	if err != nil && len(output) == 0 {
+		return map[string]bool{}
+	}
+	ignored := map[string]bool{}
+	for _, subject := range strings.Split(strings.TrimRight(string(output), "\x00"), "\x00") {
+		if subject != "" {
+			ignored[normalizeSubject(subject)] = true
+		}
+	}
+	return ignored
+}
+
+func normalizeSubject(subject string) string {
+	subject = filepath.ToSlash(filepath.Clean(subject))
+	if subject == "." {
+		return ""
+	}
+	return strings.TrimPrefix(subject, "./")
 }

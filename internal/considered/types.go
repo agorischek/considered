@@ -17,9 +17,15 @@ type Boundary struct {
 
 type Config struct {
 	Kinds     []string            `json:"kinds,omitempty" yaml:"kinds,omitempty"`
-	Exclude   []string            `json:"exclude,omitempty" yaml:"exclude,omitempty"`
+	Exclude   ExcludeConfig       `json:"exclude,omitempty" yaml:"exclude,omitempty"`
 	Standards map[string]Boundary `json:"standards,omitempty" yaml:"standards,omitempty"`
 	Variances map[string]Variance `json:"variances,omitempty" yaml:"variances,omitempty"`
+}
+
+type ExcludeConfig struct {
+	Gitignored bool     `json:"gitignored,omitempty" yaml:"gitignored,omitempty"`
+	Categories []string `json:"categories,omitempty" yaml:"categories,omitempty"`
+	Paths      []string `json:"paths,omitempty" yaml:"paths,omitempty"`
 }
 
 type Variance struct {

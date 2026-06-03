@@ -61,7 +61,7 @@ func TestEvaluateReportsExceededVarianceAsViolation(t *testing.T) {
 
 func TestEvaluateSkipsExcludedSubjects(t *testing.T) {
 	cfg := Config{
-		Exclude:   []string{"**/*_test.go"},
+		Exclude:   ExcludeConfig{Categories: []string{"tests"}},
 		Standards: map[string]Boundary{"scc.complexity": {Max: Float64(10)}},
 	}
 	report := Evaluate(cfg, []MetricRecord{
