@@ -28,6 +28,10 @@ type ExcludeConfig struct {
 	Paths      []string `json:"paths,omitempty" yaml:"paths,omitempty"`
 }
 
+type ExcludeRuntime struct {
+	Directories []string
+}
+
 type Variance struct {
 	Kind    string                    `json:"kind" yaml:"kind"`
 	Reason  string                    `json:"reason" yaml:"reason"`

@@ -6,7 +6,8 @@ import (
 )
 
 func Check(ctx context.Context, root string, cfg Config) (Report, error) {
-	records, err := CollectAll(ctx, root, ProvidersForStandards(cfg.Standards))
+	providers := ProvidersWithExcludes(ProvidersForStandards(cfg.Standards), cfg.Exclude.Runtime())
+	records, err := CollectAll(ctx, root, providers)
 	if err != nil {
 		return Report{}, err
 	}

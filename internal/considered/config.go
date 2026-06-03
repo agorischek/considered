@@ -16,6 +16,48 @@ import (
 var BuiltInKinds = []string{"architectural", "debt", "generated"}
 
 var excludeCategoryPatterns = map[string][]string{
+	"assets": {
+		"assets/**",
+		"**/assets/**",
+		"branding/**",
+		"**/branding/**",
+		"fonts/**",
+		"**/fonts/**",
+		"images/**",
+		"**/images/**",
+		"public/**",
+		"**/public/**",
+		"static/**",
+		"**/static/**",
+		"**/*.avif",
+		"**/*.bmp",
+		"**/*.eot",
+		"**/*.fig",
+		"**/*.flac",
+		"**/*.gif",
+		"**/*.ico",
+		"**/*.icns",
+		"**/*.jpeg",
+		"**/*.jpg",
+		"**/*.mov",
+		"**/*.mp3",
+		"**/*.mp4",
+		"**/*.ogg",
+		"**/*.otf",
+		"**/*.pdf",
+		"**/*.png",
+		"**/*.psd",
+		"**/*.sketch",
+		"**/*.svg",
+		"**/*.tif",
+		"**/*.tiff",
+		"**/*.ttf",
+		"**/*.wav",
+		"**/*.webm",
+		"**/*.webp",
+		"**/*.woff",
+		"**/*.woff2",
+	},
 	"dependencies": {
 		"node_modules/**",
 		"**/node_modules/**",
@@ -33,6 +75,63 @@ var excludeCategoryPatterns = map[string][]string{
 		"**/venv/**",
 		"env/**",
 		"**/env/**",
+	},
+	"generated": {
+		"bun.lock",
+		"**/bun.lock",
+		"Cargo.lock",
+		"**/Cargo.lock",
+		"Cartfile.resolved",
+		"**/Cartfile.resolved",
+		"Gemfile.lock",
+		"**/Gemfile.lock",
+		"Package.resolved",
+		"**/Package.resolved",
+		"Pipfile.lock",
+		"**/Pipfile.lock",
+		"Podfile.lock",
+		"**/Podfile.lock",
+		"composer.lock",
+		"**/composer.lock",
+		"conan.lock",
+		"**/conan.lock",
+		"go.sum",
+		"**/go.sum",
+		"mix.lock",
+		"**/mix.lock",
+		"npm-shrinkwrap.json",
+		"**/npm-shrinkwrap.json",
+		"package-lock.json",
+		"**/package-lock.json",
+		"pnpm-lock.yaml",
+		"**/pnpm-lock.yaml",
+		"poetry.lock",
+		"**/poetry.lock",
+		"pubspec.lock",
+		"**/pubspec.lock",
+		"uv.lock",
+		"**/uv.lock",
+		"yarn.lock",
+		"**/yarn.lock",
+		"generated/**",
+		"**/generated/**",
+		"gen/**",
+		"**/gen/**",
+		"codegen/**",
+		"**/codegen/**",
+		"__generated__/**",
+		"**/__generated__/**",
+		"**/*.generated.*",
+		"**/*.gen.*",
+		"**/*.pb.go",
+		"**/*.pb.swift",
+		"**/*.pb.ts",
+		"**/*.pb.js",
+		"**/*_generated.go",
+		"**/*_generated.rs",
+		"**/*_generated.swift",
+		"**/*_generated.ts",
+		"**/*_generated.tsx",
 	},
 	"tests": {
 		// Conventional test directories used by pytest, Cargo, Gradle, Mocha,
@@ -276,6 +375,21 @@ func (e ExcludeConfig) Patterns() []string {
 	return patterns
 }
 
+func (e ExcludeConfig) Runtime() ExcludeRuntime {
+	directories := map[string]bool{".git": true}
+	for _, pattern := range e.Patterns() {
+		if dir, ok := directoryDenyFromPattern(pattern); ok {
+			directories[dir] = true
+		}
+	}
+	result := ExcludeRuntime{Directories: make([]string, 0, len(directories))}
+	for directory := range directories {
+		result.Directories = append(result.Directories, directory)
+	}
+	sort.Strings(result.Directories)
+	return result
+}
+
 func KnownExcludeCategories() []string {
 	categories := make([]string, 0, len(excludeCategoryPatterns))
 	for category := range excludeCategoryPatterns {
@@ -285,11 +399,30 @@ func KnownExcludeCategories() []string {
 	return categories
 }
 
+func directoryDenyFromPattern(pattern string) (string, bool) {
+	pattern = strings.Trim(pattern, "/")
+	pattern = strings.TrimPrefix(pattern, "**/")
+	if strings.HasSuffix(pattern, "/**") {
+		dir := strings.TrimSuffix(pattern, "/**")
+		if !strings.ContainsAny(dir, "*?[{") {
+			return dir, true
+		}
+	}
+	return "", false
+}
+
 func (c Config) Validate() error {
 	var problems []string
 	for _, category := range c.Exclude.Categories {
 		if _, ok := excludeCategoryPatterns[category]; !ok {
-			problems = append(problems, fmt.Sprintf("exclude category %q is unknown; known categories are: %s", category, strings.Join(KnownExcludeCategories(), ", ")))
+			problems = append(
+				problems,
+				fmt.Sprintf(
+					"exclude category %q is unknown; known categories are: %s",
+					category,
+					strings.Join(KnownExcludeCategories(), ", "),
+				),
+			)
 		}
 	}
 	for _, pattern := range c.Exclude.Paths {

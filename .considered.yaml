@@ -1,5 +1,6 @@
 exclude:
     - "**/*_test.go"
+    - bin/**
 
 standards:
     scc.code_lines:
@@ -33,11 +34,11 @@ variances:
     internal/considered/config.go:
         kind: architectural
         reason: >
-            Configuration validation deliberately enumerates every field check
-            in one place so the rules are easy to audit.
+            Configuration validation and built-in categories deliberately keep
+            repository policy rules in one auditable place.
         metrics:
             scc.complexity:
-                max: 60
+                max: 90
     internal/considered/providers.go:
         kind: architectural
         reason: >

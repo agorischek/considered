@@ -21,6 +21,7 @@ import (
 type Provider interface {
 	Name() string
 	Collect(context.Context, string) ([]MetricRecord, error)
+	WithExcludes(ExcludeRuntime) Provider
 }
 
 // FilesystemProvider measures raw file properties. It walks the tree the same
@@ -31,9 +32,15 @@ type FilesystemProvider struct {
 	// Metrics limits collection to the named filesystem.* metrics. When empty,
 	// every filesystem metric is collected.
 	Metrics map[string]bool
+	Exclude ExcludeRuntime
 }
 
 func (FilesystemProvider) Name() string { return "filesystem" }
+
+func (p FilesystemProvider) WithExcludes(excludes ExcludeRuntime) Provider {
+	p.Exclude = excludes
+	return p
+}
 
 func (p FilesystemProvider) wants(metric string) bool {
 	return len(p.Metrics) == 0 || p.Metrics[metric]
@@ -46,7 +53,7 @@ func (p FilesystemProvider) Collect(_ context.Context, root string) ([]MetricRec
 	queue := make(chan *gocodewalker.File, 256)
 	walker := gocodewalker.NewFileWalker(root, queue)
 	walker.IncludeHidden = true
-	walker.ExcludeDirectory = []string{".git"}
+	walker.ExcludeDirectory = excludeDirectoriesWithGit(p.Exclude.Directories)
 	// Skip entries we cannot read rather than aborting the whole walk.
 	walker.SetErrorHandler(func(error) bool { return true })
 
@@ -118,12 +125,22 @@ func longestLine(path string) (int, error) {
 type ExternalProvider struct {
 	ProviderName string
 	Command      string
+	Exclude      ExcludeRuntime
 }
 
 func (p ExternalProvider) Name() string { return p.ProviderName }
 
+func (p ExternalProvider) WithExcludes(excludes ExcludeRuntime) Provider {
+	p.Exclude = excludes
+	return p
+}
+
 func (p ExternalProvider) Collect(ctx context.Context, root string) ([]MetricRecord, error) {
-	cmd := exec.CommandContext(ctx, p.Command, "--root", root, "--json")
+	args := []string{"--root", root, "--json"}
+	for _, dir := range p.Exclude.Directories {
+		args = append(args, "--exclude-dir", dir)
+	}
+	cmd := exec.CommandContext(ctx, p.Command, args...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	out, err := cmd.Output()
@@ -213,6 +230,26 @@ func CollectAll(ctx context.Context, root string, providers []Provider) ([]Metri
 		return all[i].Subject < all[j].Subject
 	})
 	return all, nil
+}
+
+func ProvidersWithExcludes(providers []Provider, excludes ExcludeRuntime) []Provider {
+	withExcludes := make([]Provider, len(providers))
+	for i, provider := range providers {
+		withExcludes[i] = provider.WithExcludes(excludes)
+	}
+	return withExcludes
+}
+
+func excludeDirectoriesWithGit(directories []string) []string {
+	seen := map[string]bool{".git": true}
+	result := []string{".git"}
+	for _, directory := range directories {
+		if directory != "" && !seen[directory] {
+			seen[directory] = true
+			result = append(result, directory)
+		}
+	}
+	return result
 }
 
 func SubjectPath(root, path string) (string, error) {

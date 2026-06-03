@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/agorischek/considered/internal/considered"
 	"github.com/boyter/scc/v3/processor"
@@ -35,6 +36,8 @@ func run(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(stderr)
 	root := fs.String("root", ".", "repository root")
 	jsonOut := fs.Bool("json", false, "write provider JSON")
+	excludeDirs := repeatFlag{}
+	fs.Var(&excludeDirs, "exclude-dir", "directory suffix to exclude before collecting metrics")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -42,7 +45,7 @@ func run(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintln(stderr, "--json is required")
 		return 2
 	}
-	records, err := collect(*root)
+	records, err := collect(*root, excludeDirs)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
@@ -56,12 +59,12 @@ func run(args []string, stdout, stderr io.Writer) int {
 	return 0
 }
 
-func collect(root string) ([]considered.MetricRecord, error) {
+func collect(root string, excludeDirs []string) ([]considered.MetricRecord, error) {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
 		return nil, err
 	}
-	output, err := runSCC(absRoot)
+	output, err := runSCC(absRoot, excludeDirs)
 	if err != nil {
 		return nil, err
 	}
@@ -101,24 +104,40 @@ func collect(root string) ([]considered.MetricRecord, error) {
 
 // runSCC runs scc over absRoot, which the caller has already resolved to an
 // absolute path.
-func runSCC(absRoot string) ([]byte, error) {
+func runSCC(absRoot string, excludeDirs []string) ([]byte, error) {
 	processor.Files = true
 	processor.Format = "json"
 	processor.DirFilePaths = []string{absRoot}
-	processor.PathDenyList = []string{".git"}
+	processor.PathDenyList = append([]string{}, excludeDirs...)
 
 	old := os.Stdout
 	reader, writer, err := os.Pipe()
 	if err != nil {
 		return nil, err
 	}
+	var buf bytes.Buffer
+	readErr := make(chan error, 1)
+	go func() {
+		_, err := io.Copy(&buf, reader)
+		readErr <- err
+	}()
 	os.Stdout = writer
 	processor.Process()
 	writer.Close()
 	os.Stdout = old
-	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, reader); err != nil {
+	if err := <-readErr; err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+type repeatFlag []string
+
+func (f *repeatFlag) String() string {
+	return strings.Join(*f, ",")
+}
+
+func (f *repeatFlag) Set(value string) error {
+	*f = append(*f, value)
+	return nil
 }

@@ -130,6 +130,8 @@ kinds:
 exclude:
   gitignored: true
   categories:
+    - assets
+    - generated
     - tests
     - vendored
     - dependencies
@@ -173,14 +175,21 @@ variances:
   (`architectural`, `debt`, `generated`).
 - **`exclude`** — files that no standard should measure. `gitignored`
   removes paths matched by Git ignore rules, `categories` applies semantic
-  presets (`tests`, `vendored`, `dependencies`), and `paths` accepts custom
-  doublestar globs such as `src/generated/**`. The `tests` category follows
+  presets (`assets`, `generated`, `tests`, `vendored`, `dependencies`), and `paths`
+  accepts custom doublestar globs such as `src/generated/**`. The `assets`
+  category follows conventional static asset paths and file extensions,
+  including `assets/**`, `public/**`, `static/**`, `branding/**`, images,
+  fonts, audio/video, PDFs, design files, and SVGs. The `generated` category
+  covers conventional machine-written outputs whose source of truth is
+  elsewhere, including common lockfiles (`bun.lock`, `Cargo.lock`,
+  `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, and peers), generated
+  directories, codegen directories, `__generated__` directories, generated
+  filename suffixes, and common protobuf outputs. The `tests` category follows
   default or conventional discovery patterns from common runners and build
-  tools, including Jest, Vitest, Node, Bun, Deno, pytest, unittest, Go,
-  Cargo, Maven Surefire, Gradle, Mocha, Cypress, Playwright, RSpec, and
-  PHPUnit. Use exclusions for whole functional categories; use a `variance`
-  to document a single reviewed departure. A file that is excluded is simply
-  not measured.
+  tools, including Jest, Vitest, Node, Bun, Deno, pytest, unittest, Go, Cargo,
+  Maven Surefire, Gradle, Mocha, Cypress, Playwright, RSpec, and PHPUnit. Use
+  exclusions for whole functional categories; use a `variance` to document a
+  single reviewed departure. A file that is excluded is simply not measured.
 - **`standards`** — boundaries keyed by metric. Each entry takes `min`,
   `max`, or both. Metric names must be namespaced.
 - **`variances`** — keyed by subject path. Each requires a `kind` (built-in

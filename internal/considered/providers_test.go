@@ -14,6 +14,8 @@ type errProvider struct{}
 
 func (errProvider) Name() string { return "err" }
 
+func (errProvider) WithExcludes(ExcludeRuntime) Provider { return errProvider{} }
+
 func (errProvider) Collect(context.Context, string) ([]MetricRecord, error) {
 	return nil, errors.New("boom")
 }
