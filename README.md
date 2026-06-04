@@ -56,6 +56,19 @@ go build -o bin/considered-scc ./cmd/considered-scc
 Put both binaries on your `PATH`. The `considered` CLI invokes provider
 binaries (such as `considered-scc`) by name, so they must be discoverable.
 
+## Releases
+
+GitHub Releases are published from version tags:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow builds `considered` and `considered-scc` together for
+Linux, macOS, and Windows on amd64 and arm64. Each release includes platform
+archives plus `checksums.txt`.
+
 ## Usage
 
 ### Initialize

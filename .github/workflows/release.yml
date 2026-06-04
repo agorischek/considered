@@ -1,0 +1,98 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish, e.g. v0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          submodules: recursive
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Resolve release tag
+        id: release
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          if ! git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "tag ${tag} does not exist" >&2
+            exit 1
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build release archives
+        env:
+          VERSION: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          mkdir -p dist
+
+          targets='linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64'
+          for target in $targets; do
+            goos="${target%/*}"
+            goarch="${target#*/}"
+            name="considered_${VERSION}_${goos}_${goarch}"
+            out="dist/${name}"
+            mkdir -p "$out"
+
+            ext=""
+            if [ "$goos" = "windows" ]; then
+              ext=".exe"
+            fi
+
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+              go build -trimpath -ldflags "-s -w -X main.versionOverride=${VERSION}" \
+              -o "${out}/considered${ext}" ./cmd/considered
+            CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+              go build -trimpath -ldflags "-s -w" \
+              -o "${out}/considered-scc${ext}" ./cmd/considered-scc
+
+            cp README.md "$out/"
+            if [ "$goos" = "windows" ]; then
+              (cd dist && zip -qr "${name}.zip" "$name")
+            else
+              tar -C dist -czf "dist/${name}.tar.gz" "$name"
+            fi
+            rm -rf "$out"
+          done
+
+          (cd dist && shasum -a 256 * > checksums.txt)
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* \
+              --title "$TAG" \
+              --notes "Release $TAG."
+          fi

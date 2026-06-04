@@ -12,6 +12,8 @@ import (
 	"github.com/agorischek/considered/internal/considered"
 )
 
+var versionOverride string
+
 func main() {
 	os.Exit(run(os.Args[1:]))
 }
@@ -150,6 +152,9 @@ func resolveConfigPath(root, path string) string {
 }
 
 func version() string {
+	if versionOverride != "" {
+		return versionOverride
+	}
 	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
 		return info.Main.Version
 	}
