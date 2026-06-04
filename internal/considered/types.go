@@ -16,10 +16,11 @@ type Boundary struct {
 }
 
 type Config struct {
-	Kinds     []string            `json:"kinds,omitempty" yaml:"kinds,omitempty"`
-	Exclude   ExcludeConfig       `json:"exclude,omitempty" yaml:"exclude,omitempty"`
-	Standards map[string]Boundary `json:"standards,omitempty" yaml:"standards,omitempty"`
-	Variances map[string]Variance `json:"variances,omitempty" yaml:"variances,omitempty"`
+	Kinds             []string            `json:"kinds,omitempty" yaml:"kinds,omitempty"`
+	Exclude           ExcludeConfig       `json:"exclude,omitempty" yaml:"exclude,omitempty"`
+	Standards         map[string]Boundary `json:"standards,omitempty" yaml:"standards,omitempty"`
+	WarningThresholds WarningConfig       `json:"warnings,omitempty" yaml:"warnings,omitempty"`
+	Variances         map[string]Variance `json:"variances,omitempty" yaml:"variances,omitempty"`
 }
 
 type ExcludeConfig struct {
@@ -30,6 +31,11 @@ type ExcludeConfig struct {
 
 type ExcludeRuntime struct {
 	Directories []string
+}
+
+type WarningConfig struct {
+	PercentBelowMax *float64 `json:"percentBelowMax,omitempty" yaml:"percentBelowMax,omitempty"`
+	PercentAboveMin *float64 `json:"percentAboveMin,omitempty" yaml:"percentAboveMin,omitempty"`
 }
 
 type Variance struct {
@@ -64,10 +70,13 @@ type Finding struct {
 	MetricReason     string    `json:"metric_reason,omitempty"`
 	Provider         string    `json:"provider,omitempty"`
 	VarianceExceeded bool      `json:"variance_exceeded,omitempty"`
+	WarningBoundary  string    `json:"warning_boundary,omitempty"`
+	WarningPercent   *float64  `json:"warning_percent,omitempty"`
 }
 
 type Report struct {
 	Violations []Finding `json:"violations"`
+	Warnings   []Finding `json:"warnings"`
 	Variances  []Finding `json:"variances"`
 }
 

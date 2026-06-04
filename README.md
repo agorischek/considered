@@ -24,6 +24,7 @@ why unusual structures exist.
 | **Subject** | The thing being measured. The MVP focuses on files, identified by their repo-relative path. |
 | **Standard** | A policy boundary, e.g. `scc.code_lines <= 500`. Standards describe normal, repository-wide expectations. |
 | **Violation** | A metric value that falls outside a standard. |
+| **Warning** | A metric value that still passes, but is close to a standard or approved variance boundary. |
 | **Variance** | A reviewed departure from a standard for a specific subject, with a required kind and reason. |
 | **Kind** | A category for a variance. Built-in: `architectural`, `debt`, `generated`. Repositories may define more. |
 
@@ -33,9 +34,11 @@ For each subject and metric:
 
 1. Collect the metric value from its provider.
 2. Apply the matching standard.
-3. If the value is within the standard → **pass**.
+3. If the value is within the standard → **pass**. If it is near a configured
+   boundary, also report a non-failing **warning**.
 4. If it exceeds the standard, check for a variance on that subject and metric.
    - Within the variance's approved boundary → reported as a **variance** (passes).
+     If it is near that approved boundary, also report a non-failing **warning**.
    - No variance, or value exceeds the approved boundary → reported as a **violation** (fails).
 
 Variances target exact subjects — the MVP intentionally avoids globs, so every
@@ -101,8 +104,8 @@ considered check --json
 considered check --sarif
 ```
 
-In SARIF, violations are emitted as errors (fail CI) and variances as
-informational findings (visible in code scanning, do not fail CI).
+In SARIF, violations are emitted as errors (fail CI), warnings as warnings,
+and variances as informational findings (visible in code scanning, do not fail CI).
 
 ### Add a variance
 
@@ -161,6 +164,10 @@ standards:
   filesystem.longest_line:
     max: 140
 
+warnings:
+  percentBelowMax: 10
+  percentAboveMin: 10
+
 variances:
   src/parser/grammar.ts:
     kind: architectural
@@ -205,6 +212,11 @@ variances:
   single reviewed departure. A file that is excluded is simply not measured.
 - **`standards`** — boundaries keyed by metric. Each entry takes `min`,
   `max`, or both. Metric names must be namespaced.
+- **`warnings`** — optional near-boundary reporting. `percentBelowMax: 10`
+  warns when a passing value is at least 90% of a max boundary.
+  `percentAboveMin: 10` warns when a passing value is at most 110% of a
+  min boundary. Warnings do not fail checks, and apply to both standards and
+  approved variance boundaries.
 - **`variances`** — keyed by subject path. Each requires a `kind` (built-in
   or declared in `kinds`) and a `reason`, and may override one or more metric
   boundaries under `metrics`. A per-metric `reason` can document an

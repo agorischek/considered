@@ -59,6 +59,50 @@ func TestEvaluateReportsExceededVarianceAsViolation(t *testing.T) {
 	}
 }
 
+func TestEvaluateReportsWarningsNearStandardsAndVariances(t *testing.T) {
+	cfg := Config{
+		Standards: map[string]Boundary{
+			"filesystem.bytes": {Min: Float64(100)},
+			"scc.code_lines":   {Max: Float64(100)},
+		},
+		WarningThresholds: WarningConfig{
+			PercentBelowMax: Float64(10),
+			PercentAboveMin: Float64(10),
+		},
+		Variances: map[string]Variance{
+			"generated.go": {
+				Kind:   "generated",
+				Reason: "Generated source is committed.",
+				Metrics: map[string]VarianceMetric{
+					"scc.code_lines": {Boundary: Boundary{Max: Float64(200)}},
+				},
+			},
+		},
+	}
+	report := Evaluate(cfg, []MetricRecord{
+		{Subject: "near-max.go", Values: map[string]float64{"scc.code_lines": 91}},
+		{Subject: "near-min.bin", Values: map[string]float64{"filesystem.bytes": 105}},
+		{Subject: "safe.go", Values: map[string]float64{"scc.code_lines": 80}},
+		{Subject: "over.go", Values: map[string]float64{"scc.code_lines": 101}},
+		{Subject: "generated.go", Values: map[string]float64{"scc.code_lines": 190}},
+	})
+	if len(report.Warnings) != 3 {
+		t.Fatalf("expected 3 warnings, got %#v", report.Warnings)
+	}
+	if len(report.Variances) != 1 || report.Variances[0].Subject != "generated.go" {
+		t.Fatalf("expected generated variance, got %#v", report.Variances)
+	}
+	if len(report.Violations) != 1 || report.Violations[0].Subject != "over.go" {
+		t.Fatalf("expected over.go violation, got %#v", report.Violations)
+	}
+	if report.Warnings[0].Subject != "generated.go" || report.Warnings[0].WarningBoundary != "max" {
+		t.Fatalf("expected generated max warning first after sort, got %#v", report.Warnings)
+	}
+	if report.Warnings[1].WarningBoundary != "max" || report.Warnings[2].WarningBoundary != "min" {
+		t.Fatalf("unexpected warning boundaries: %#v", report.Warnings)
+	}
+}
+
 func TestEvaluateSkipsExcludedSubjects(t *testing.T) {
 	cfg := Config{
 		Exclude:   ExcludeConfig{Categories: []string{"tests"}},

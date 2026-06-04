@@ -15,6 +15,14 @@ func sampleReport() Report {
 			Actual:   12,
 			Standard: Boundary{Max: Float64(10)},
 		}},
+		Warnings: []Finding{{
+			Subject:         "c.go",
+			Metric:          "scc.code_lines",
+			Actual:          9,
+			Standard:        Boundary{Max: Float64(10)},
+			WarningBoundary: "max",
+			WarningPercent:  Float64(10),
+		}},
 		Variances: []Finding{{
 			Subject:  "b.go",
 			Metric:   "scc.code_lines",
@@ -33,7 +41,7 @@ func TestWriteTextDistinguishesViolationsAndVariances(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := buf.String()
-	for _, want := range []string{"Violations", "Variances", "actual: 12", "approved: <= 20"} {
+	for _, want := range []string{"Violations", "Warnings", "Variances", "actual: 12", "warning: within 10% of max", "approved: <= 20"} {
 		if !strings.Contains(out, want) {
 			t.Fatalf("expected %q in %q", want, out)
 		}
@@ -46,8 +54,8 @@ func TestWriteTextEmptyReport(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := buf.String()
-	if strings.Count(out, "None") != 2 {
-		t.Fatalf("expected empty report to show no violations and no variances: %q", out)
+	if strings.Count(out, "None") != 3 {
+		t.Fatalf("expected empty report to show no findings: %q", out)
 	}
 }
 
@@ -75,8 +83,10 @@ func TestWriteSARIFLevels(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := buf.String()
-	if !strings.Contains(text, `"level": "error"`) || !strings.Contains(text, `"level": "note"`) {
-		t.Fatalf("expected SARIF error and note levels: %s", text)
+	for _, want := range []string{`"level": "error"`, `"level": "warning"`, `"level": "note"`} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("expected SARIF level %s: %s", want, text)
+		}
 	}
 }
 

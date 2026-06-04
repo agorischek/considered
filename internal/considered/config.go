@@ -267,6 +267,10 @@ func DefaultConfig() Config {
 			"filesystem.bytes":        {Max: Float64(50000)},
 			"filesystem.longest_line": {Max: Float64(140)},
 		},
+		WarningThresholds: WarningConfig{
+			PercentBelowMax: Float64(10),
+			PercentAboveMin: Float64(10),
+		},
 		Variances: map[string]Variance{},
 	}
 }
@@ -441,6 +445,7 @@ func (c Config) Validate() error {
 			problems = append(problems, fmt.Sprintf("standard %q min cannot exceed max", metric))
 		}
 	}
+	problems = append(problems, c.WarningThresholds.validationProblems()...)
 
 	kinds := map[string]bool{}
 	for _, kind := range BuiltInKinds {

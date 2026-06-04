@@ -18,6 +18,7 @@ func Check(ctx context.Context, root string, cfg Config) (Report, error) {
 func Evaluate(cfg Config, records []MetricRecord) Report {
 	report := Report{
 		Violations: []Finding{},
+		Warnings:   []Finding{},
 		Variances:  []Finding{},
 	}
 	for _, record := range records {
@@ -26,7 +27,7 @@ func Evaluate(cfg Config, records []MetricRecord) Report {
 		}
 		for metric, actual := range record.Values {
 			standard, ok := cfg.Standards[metric]
-			if !ok || standard.Allows(actual) {
+			if !ok {
 				continue
 			}
 			finding := Finding{
@@ -35,6 +36,12 @@ func Evaluate(cfg Config, records []MetricRecord) Report {
 				Actual:   actual,
 				Standard: standard,
 				Provider: record.Provider,
+			}
+			if standard.Allows(actual) {
+				if warning, ok := warningFinding(finding, standard, cfg.WarningThresholds); ok {
+					report.Warnings = append(report.Warnings, warning)
+				}
+				continue
 			}
 			if variance, ok := cfg.Variances[record.Subject]; ok {
 				if override, ok := variance.Metrics[metric]; ok {
@@ -45,6 +52,9 @@ func Evaluate(cfg Config, records []MetricRecord) Report {
 					finding.MetricReason = override.Reason
 					if approved.Allows(actual) {
 						report.Variances = append(report.Variances, finding)
+						if warning, ok := warningFinding(finding, approved, cfg.WarningThresholds); ok {
+							report.Warnings = append(report.Warnings, warning)
+						}
 						continue
 					}
 					finding.VarianceExceeded = true
@@ -54,6 +64,7 @@ func Evaluate(cfg Config, records []MetricRecord) Report {
 		}
 	}
 	sortFindings(report.Violations)
+	sortFindings(report.Warnings)
 	sortFindings(report.Variances)
 	return report
 }

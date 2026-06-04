@@ -53,6 +53,33 @@ func TestRunCheckSarifSuccess(t *testing.T) {
 	}
 }
 
+func TestRunCheckWarningsDoNotFail(t *testing.T) {
+	dir := t.TempDir()
+	cfg := considered.Config{
+		Standards: map[string]considered.Boundary{
+			"filesystem.bytes": {Max: considered.Float64(100)},
+		},
+		WarningThresholds: considered.WarningConfig{
+			PercentBelowMax: considered.Float64(10),
+		},
+		Variances: map[string]considered.Variance{},
+	}
+	if err := considered.SaveConfig(filepath.Join(dir, considered.ConfigName), cfg); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte(strings.Repeat("a", 95)), 0644); err != nil {
+		t.Fatal(err)
+	}
+	out := captureStdout(t, func() {
+		if code := run([]string{"check", "--root", dir}); code != 0 {
+			t.Fatalf("check exit code = %d", code)
+		}
+	})
+	if !strings.Contains(out, "Warnings") || !strings.Contains(out, "within 10% of max") {
+		t.Fatalf("expected warning output: %q", out)
+	}
+}
+
 func TestRunVarianceAdd(t *testing.T) {
 	dir := t.TempDir()
 	cfg := considered.Config{

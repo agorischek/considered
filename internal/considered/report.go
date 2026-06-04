@@ -33,6 +33,31 @@ func WriteText(w io.Writer, report Report) error {
 		}
 	}
 
+	if len(report.Warnings) == 0 {
+		if _, err := fmt.Fprintln(w, "\nWarnings\n\n  None"); err != nil {
+			return err
+		}
+	} else {
+		if _, err := fmt.Fprintln(w, "\nWarnings"); err != nil {
+			return err
+		}
+		for _, f := range report.Warnings {
+			if _, err := fmt.Fprintf(w, "\n  %s\n\n    %s\n\n      actual: %s\n      standard: %s\n", f.Subject, f.Metric, FormatValue(f.Actual), f.Standard.String()); err != nil {
+				return err
+			}
+			if f.Approved != nil {
+				if _, err := fmt.Fprintf(w, "      approved: %s\n", f.Approved.String()); err != nil {
+					return err
+				}
+			}
+			if f.WarningBoundary != "" && f.WarningPercent != nil {
+				if _, err := fmt.Fprintf(w, "      warning: within %s%% of %s\n", FormatValue(*f.WarningPercent), f.WarningBoundary); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	if len(report.Variances) == 0 {
 		_, err := fmt.Fprintln(w, "\nVariances\n\n  None")
 		return err
@@ -119,6 +144,9 @@ func WriteSARIF(w io.Writer, report Report) error {
 		if f.Approved != nil {
 			msg = fmt.Sprintf("%s, approved %s (%s)", msg, f.Approved.String(), f.Kind)
 		}
+		if f.WarningBoundary != "" && f.WarningPercent != nil {
+			msg = fmt.Sprintf("%s, within %s%% of %s", msg, FormatValue(*f.WarningPercent), f.WarningBoundary)
+		}
 		results = append(results, sarifResult{
 			RuleID:  f.Metric,
 			Level:   level,
@@ -132,6 +160,9 @@ func WriteSARIF(w io.Writer, report Report) error {
 	}
 	for _, f := range report.Violations {
 		add(f, "error")
+	}
+	for _, f := range report.Warnings {
+		add(f, "warning")
 	}
 	for _, f := range report.Variances {
 		add(f, "note")

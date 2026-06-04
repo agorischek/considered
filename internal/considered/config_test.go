@@ -57,6 +57,25 @@ func TestConfigValidateRejectsBadExcludePathGlob(t *testing.T) {
 	}
 }
 
+func TestConfigValidateRejectsWarningPercentOutsideRange(t *testing.T) {
+	cfg := Config{
+		Standards: map[string]Boundary{"filesystem.bytes": {Max: Float64(1)}},
+		WarningThresholds: WarningConfig{
+			PercentBelowMax: Float64(101),
+			PercentAboveMin: Float64(-1),
+		},
+	}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("expected warning threshold validation errors")
+	}
+	for _, want := range []string{"warnings.percentBelowMax", "warnings.percentAboveMin"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Fatalf("expected %q in %q", want, err.Error())
+		}
+	}
+}
+
 func TestConfigValidateAllowsBuiltInAndCustomKinds(t *testing.T) {
 	cfg := Config{
 		Kinds: []string{"performance"},
@@ -105,6 +124,9 @@ func TestLoadAndSaveConfig(t *testing.T) {
 	}
 	if loaded.Variances["x.go"].Kind != "generated" {
 		t.Fatalf("variance was not round-tripped: %#v", loaded.Variances)
+	}
+	if loaded.WarningThresholds.PercentBelowMax == nil || *loaded.WarningThresholds.PercentBelowMax != 10 {
+		t.Fatalf("warning threshold was not round-tripped: %#v", loaded.WarningThresholds)
 	}
 }
 
