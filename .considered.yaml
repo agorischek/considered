@@ -1,6 +1,10 @@
 exclude:
-    - "**/*_test.go"
-    - bin/**
+    gitignored: true
+    categories:
+        - assets
+    paths:
+        - "**/*_test.go"
+        - bin/**
 
 standards:
     scc.code_lines:

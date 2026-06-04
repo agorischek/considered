@@ -1,3 +1,5 @@
+<img src="assets/logo.png" alt="Considered" height="72">
+
 # Considered
 
 Considered is a repository policy and decision documentation tool.
