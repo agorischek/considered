@@ -76,6 +76,7 @@ var excludeCategoryPatterns = map[string][]string{
 		"env/**",
 		"**/env/**",
 	},
+	"documentation": documentationExcludePatterns,
 	"generated": {
 		"bun.lock",
 		"**/bun.lock",

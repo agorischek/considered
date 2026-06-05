@@ -147,13 +147,23 @@ func TestLoadConfigAcceptsLegacyExcludePathList(t *testing.T) {
 
 func TestExcludeCategoriesAndPaths(t *testing.T) {
 	cfg := Config{Exclude: ExcludeConfig{
-		Categories: []string{"assets", "generated", "tests", "vendored", "dependencies"},
+		Categories: []string{"assets", "documentation", "generated", "tests", "vendored", "dependencies"},
 		Paths:      []string{"src/generated/**"},
 	}}
 	excluded := []string{
 		"branding/studio-primer.svg",
 		"bun.lock",
 		"Cargo.lock",
+		"CHANGELOG.md",
+		"CODE_OF_CONDUCT.md",
+		"CONTRIBUTING.md",
+		"LICENSE",
+		"NOTICE.txt",
+		"README.md",
+		"SECURITY.md",
+		".github/PULL_REQUEST_TEMPLATE.md",
+		"docs/guide.md",
+		"manual/reference.rst",
 		"package-lock.json",
 		"pnpm-lock.yaml",
 		"public/favicon.ico",

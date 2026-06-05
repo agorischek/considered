@@ -149,6 +149,7 @@ exclude:
   gitignored: true
   categories:
     - assets
+    - documentation
     - generated
     - tests
     - vendored
@@ -197,11 +198,16 @@ variances:
   (`architectural`, `debt`, `generated`).
 - **`exclude`** — files that no standard should measure. `gitignored`
   removes paths matched by Git ignore rules, `categories` applies semantic
-  presets (`assets`, `generated`, `tests`, `vendored`, `dependencies`), and `paths`
+  presets (`assets`, `documentation`, `generated`, `tests`, `vendored`, `dependencies`), and `paths`
   accepts custom doublestar globs such as `src/generated/**`. The `assets`
   category follows conventional static asset paths and file extensions,
   including `assets/**`, `public/**`, `static/**`, `branding/**`, images,
-  fonts, audio/video, PDFs, design files, and SVGs. The `generated` category
+  fonts, audio/video, PDFs, design files, and SVGs. The `documentation`
+  category covers conventional prose and repository documentation, including
+  `README*`, `CHANGELOG*`, `LICENSE*`, `CONTRIBUTING*`, `CODE_OF_CONDUCT*`,
+  `SECURITY*`, `NOTICE*`, `docs/**`, `doc/**`, `documentation/**`, GitHub
+  Markdown templates, and common documentation extensions such as `.md`,
+  `.mdx`, `.rst`, `.adoc`, and `.txt`. The `generated` category
   covers conventional machine-written outputs whose source of truth is
   elsewhere, including common lockfiles (`bun.lock`, `Cargo.lock`,
   `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, and peers), generated
