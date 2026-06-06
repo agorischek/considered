@@ -1,0 +1,57 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+
+const providerOutput = `{
+  "metrics": [
+    {
+      "subject": "src/app/main.go",
+      "provider": "foo",
+      "values": { "foo.some_metric": 42 }
+    }
+  ]
+}`;
+---
+
+<DocsLayout
+  title="Providers"
+  description="Understand filesystem, scc, and custom metric providers."
+  current="/providers/"
+>
+  <article class="doc">
+    <h1>Providers</h1>
+    <p>
+      Considered itself defines almost no metrics. Providers collect metrics,
+      and the policy engine evaluates their output.
+    </p>
+
+    <h2>Built in</h2>
+    <ul>
+      <li><code>filesystem.bytes</code> measures file size.</li>
+      <li><code>filesystem.longest_line</code> measures the longest line in Unicode characters.</li>
+    </ul>
+
+    <h2>Bundled external provider</h2>
+    <p>
+      <code>considered-scc</code> wraps the vendored <code>scc</code> submodule
+      and provides metrics such as <code>scc.code_lines</code>,
+      <code>scc.comment_lines</code>, and <code>scc.complexity</code>.
+    </p>
+
+    <h2>Custom providers</h2>
+    <p>
+      For a metric namespaced <code>foo.*</code>, Considered runs an executable
+      named <code>considered-foo</code>.
+    </p>
+
+    <pre><code>considered-foo --root &lt;dir&gt; --json</code></pre>
+
+    <p>The provider prints JSON to stdout:</p>
+
+    <pre><code>{providerOutput}</code></pre>
+
+    <p>
+      <code>subject</code> is repository-relative. <code>provider</code> is
+      optional and defaults to the metric namespace.
+    </p>
+  </article>
+</DocsLayout>

@@ -1,0 +1,75 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Configuration"
+  description="Understand the .considered.yaml configuration file."
+  current="/configuration/"
+>
+  <article class="doc">
+    <h1>Configuration</h1>
+    <p>
+      The configuration file is <code>.considered.yaml</code> at the repository
+      root. It defines the standards to evaluate, the files to exclude, and any
+      reviewed variances.
+    </p>
+
+    <pre><code>kinds:
+  - performance
+  - compatibility
+
+exclude:
+  gitignored: true
+  categories:
+    - assets
+    - documentation
+    - generated
+    - tests
+    - vendored
+    - dependencies
+  paths:
+    - src/generated/**
+
+standards:
+  scc.code_lines:
+    max: 500
+  scc.complexity:
+    max: 50
+  filesystem.bytes:
+    max: 50000
+  filesystem.longest_line:
+    max: 140
+
+warnings:
+  percentBelowMax: 10
+  percentAboveMin: 10</code></pre>
+
+    <h2>Kinds</h2>
+    <p>
+      <code>kinds</code> adds repository-specific variance kinds. Built-ins are
+      <code>architectural</code>, <code>debt</code>, and <code>generated</code>.
+    </p>
+
+    <h2>Standards</h2>
+    <p>
+      Standards are metric boundaries keyed by namespaced metric name. Each
+      standard takes <code>min</code>, <code>max</code>, or both.
+    </p>
+
+    <h2>Warnings</h2>
+    <p>
+      Warnings report passing values that are close to a boundary.
+      <code>percentBelowMax: 10</code> warns when a passing value is at least
+      90% of a max boundary. <code>percentAboveMin: 10</code> warns when a
+      passing value is at most 110% of a min boundary.
+    </p>
+
+    <div class="note">
+      <p>
+        Warnings never fail the check. They apply to both standards and approved
+        variance boundaries.
+      </p>
+    </div>
+  </article>
+</DocsLayout>

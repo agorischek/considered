@@ -1,0 +1,72 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Exclusions"
+  description="Exclude gitignored files, semantic categories, and custom paths."
+  current="/exclusions/"
+>
+  <article class="doc">
+    <h1>Exclusions</h1>
+    <p>
+      Exclusions describe files that no standard should measure. Use categories
+      for semantic groups and paths for project-specific cases.
+    </p>
+
+    <pre><code>exclude:
+  gitignored: true
+  categories:
+    - assets
+    - documentation
+    - generated
+    - tests
+    - vendored
+    - dependencies
+  paths:
+    - src/generated/**</code></pre>
+
+    <h2>Built-in categories</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>assets</code></td>
+          <td>Static assets, images, fonts, PDFs, design files, audio, and video.</td>
+        </tr>
+        <tr>
+          <td><code>documentation</code></td>
+          <td>Repository prose such as README, changelog, docs directories, Markdown, text, reStructuredText, and AsciiDoc.</td>
+        </tr>
+        <tr>
+          <td><code>generated</code></td>
+          <td>Lockfiles, generated directories, codegen outputs, protobuf outputs, and generated filename suffixes.</td>
+        </tr>
+        <tr>
+          <td><code>tests</code></td>
+          <td>Conventional test files and directories from common language ecosystems and test runners.</td>
+        </tr>
+        <tr>
+          <td><code>vendored</code></td>
+          <td>Committed third-party source such as vendor, third_party, external, and vendored directories.</td>
+        </tr>
+        <tr>
+          <td><code>dependencies</code></td>
+          <td>Installed dependency directories such as node_modules, virtual environments, and package stores.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Paths</h2>
+    <p>
+      Custom paths use doublestar glob syntax. They are useful for local
+      conventions that are meaningful to one repository but too specific for a
+      built-in category.
+    </p>
+  </article>
+</DocsLayout>

@@ -1,0 +1,71 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Considered documentation"
+  description="Repository policy and decision documentation for codebases."
+  current="/"
+>
+  <section class="hero">
+    <span class="eyebrow">Repository policy</span>
+    <h1>Make standards visible. Keep exceptions considered.</h1>
+    <p class="lede">
+      Considered evaluates repository metrics against declared standards and
+      records the reviewed reasons for intentional departures. The goal is not
+      just enforcement. It is preserving architectural judgment where future
+      maintainers can find it.
+    </p>
+    <div class="actions">
+      <a class="button primary" href="quick-start/">Start checking</a>
+      <a class="button secondary" href="configuration/">Read the config</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>What it records</h2>
+    <div class="grid" aria-label="Core concepts">
+      <article class="card">
+        <h3>Standards</h3>
+        <p>
+          Repository-wide metric boundaries such as code lines, complexity,
+          file bytes, and longest line.
+        </p>
+      </article>
+      <article class="card">
+        <h3>Violations</h3>
+        <p>
+          Values outside the configured standard. Violations fail checks and
+          deserve attention.
+        </p>
+      </article>
+      <article class="card">
+        <h3>Variances</h3>
+        <p>
+          Reviewed departures from standards, tied to exact files and recorded
+          with a reason.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="doc">
+    <h2>How evaluation works</h2>
+    <ol>
+      <li>Collect a metric value from its provider.</li>
+      <li>Apply the matching standard.</li>
+      <li>
+        If the value is within the standard, it passes. Near-boundary values can
+        also be reported as non-failing warnings.
+      </li>
+      <li>
+        If the value exceeds the standard, Considered checks for a variance on
+        the exact subject and metric.
+      </li>
+      <li>
+        A value inside the variance boundary passes as a visible variance. A
+        missing or exceeded variance is a violation.
+      </li>
+    </ol>
+  </section>
+</DocsLayout>

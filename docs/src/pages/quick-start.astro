@@ -1,0 +1,55 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Quick start"
+  description="Install Considered, initialize configuration, and run a check."
+  current="/quick-start/"
+>
+  <article class="doc">
+    <h1>Quick start</h1>
+    <p>
+      Considered ships as two binaries: the main CLI and the bundled
+      <code>scc</code> provider. The CLI discovers providers by executable name,
+      so both binaries must be on your <code>PATH</code>.
+    </p>
+
+    <h2>Install from source</h2>
+    <pre><code>git clone --recurse-submodules https://github.com/agorischek/considered.git
+cd considered
+go build -o bin/considered ./cmd/considered
+go build -o bin/considered-scc ./cmd/considered-scc</code></pre>
+
+    <p>
+      Put both binaries somewhere on your <code>PATH</code>, or add the local
+      <code>bin/</code> directory while you are trying it out.
+    </p>
+
+    <h2>Initialize a repository</h2>
+    <pre><code>considered init</code></pre>
+    <p>
+      This writes a starter <code>.considered.yaml</code> to the repository root.
+      It fails if one already exists.
+    </p>
+
+    <h2>Run a check</h2>
+    <pre><code>considered check</code></pre>
+    <p>
+      The text report separates failing violations from passing variances and
+      near-boundary warnings.
+    </p>
+
+    <h2>Add a variance</h2>
+    <pre><code>considered variance add \
+  --subject src/parser/grammar.ts \
+  --metric scc.code_lines \
+  --kind architectural \
+  --reason "Grammar definitions are intentionally centralized."</code></pre>
+
+    <p>
+      Considered captures the subject's current metric value as the approved
+      boundary and writes the variance into the configuration.
+    </p>
+  </article>
+</DocsLayout>

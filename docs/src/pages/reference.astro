@@ -1,0 +1,60 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="CLI reference"
+  description="Command reference for the Considered CLI."
+  current="/reference/"
+>
+  <article class="doc">
+    <h1>CLI reference</h1>
+
+    <h2><code>considered init</code></h2>
+    <p>
+      Writes a starter <code>.considered.yaml</code> to the repository root.
+      Fails if the file already exists.
+    </p>
+
+    <h2><code>considered check</code></h2>
+    <p>Evaluates the repository against the configuration.</p>
+    <pre><code>considered check
+considered check --json
+considered check --sarif</code></pre>
+
+    <h2><code>considered variance add</code></h2>
+    <p>
+      Captures a metric value as an approved variance boundary and writes it to
+      the configuration.
+    </p>
+    <pre><code>considered variance add \
+  --subject &lt;path&gt; \
+  --metric &lt;metric&gt; \
+  --kind &lt;kind&gt; \
+  --reason &lt;reason&gt; \
+  --metric-reason &lt;reason&gt;</code></pre>
+
+    <h2><code>considered version</code></h2>
+    <p>Prints the CLI version.</p>
+
+    <h2>Common flags</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Flag</th>
+          <th>Meaning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>--root &lt;dir&gt;</code></td>
+          <td>Repository root. Defaults to the current directory.</td>
+        </tr>
+        <tr>
+          <td><code>--config &lt;file&gt;</code></td>
+          <td>Explicit config path. Defaults to <code>&lt;root&gt;/.considered.yaml</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </article>
+</DocsLayout>

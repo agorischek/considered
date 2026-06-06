@@ -1,0 +1,56 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="Variances"
+  description="Document intentional departures from repository standards."
+  current="/variances/"
+>
+  <article class="doc">
+    <h1>Variances</h1>
+    <p>
+      Variances are not suppressions. They are reviewed departures from a
+      standard, attached to exact subjects with required rationale. A variance
+      remains visible in every report.
+    </p>
+
+    <pre><code>variances:
+  src/parser/grammar.ts:
+    kind: architectural
+    reason: >
+      Grammar definitions are intentionally centralized and easier to
+      understand in a single file.
+    metrics:
+      scc.code_lines:
+        max: 1274
+      scc.complexity:
+        max: 120
+        reason: >
+          Complexity is primarily driven by parser state generation.</code></pre>
+
+    <h2>Exact subjects</h2>
+    <p>
+      Variances target exact repository-relative paths. The MVP intentionally
+      avoids variance globs so each departure maps to one reviewed file.
+    </p>
+
+    <h2>Per-metric reasons</h2>
+    <p>
+      A variance has an overall reason, and individual metric overrides can add
+      a more specific reason when the general rationale is not enough.
+    </p>
+
+    <h2>Adding from the CLI</h2>
+    <pre><code>considered variance add \
+  --subject src/parser/grammar.ts \
+  --metric scc.code_lines \
+  --kind architectural \
+  --reason "Grammar definitions are intentionally centralized."</code></pre>
+
+    <p>
+      Adding a variance for a value that already satisfies its standard is
+      rejected. The command is for reviewed exceptions, not noise.
+    </p>
+  </article>
+</DocsLayout>

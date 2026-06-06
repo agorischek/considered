@@ -1,0 +1,62 @@
+---
+import DocsLayout from "../layouts/DocsLayout.astro";
+
+const githubActionsSnippet = `- name: Build providers
+  run: |
+    go build -o bin/considered ./cmd/considered
+    go build -o bin/considered-scc ./cmd/considered-scc
+
+- name: Considered check
+  run: |
+    PATH="\${GITHUB_WORKSPACE}/bin:\${PATH}" bin/considered check`;
+---
+
+<DocsLayout
+  title="CI"
+  description="Use Considered in CI and code scanning workflows."
+  current="/ci/"
+>
+  <article class="doc">
+    <h1>CI</h1>
+    <p>
+      Considered exits non-zero only for violations or usage/configuration
+      errors. Variances and warnings stay visible without failing the check.
+    </p>
+
+    <h2>Exit codes</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Meaning</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>0</code></td>
+          <td>All checks pass.</td>
+        </tr>
+        <tr>
+          <td><code>1</code></td>
+          <td>One or more violations.</td>
+        </tr>
+        <tr>
+          <td><code>2</code></td>
+          <td>Usage or configuration error.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Machine-readable output</h2>
+    <pre><code>considered check --json
+considered check --sarif</code></pre>
+
+    <p>
+      In SARIF, violations are emitted as errors, warnings as warnings, and
+      variances as informational notes.
+    </p>
+
+    <h2>GitHub Actions</h2>
+    <pre><code>{githubActionsSnippet}</code></pre>
+  </article>
+</DocsLayout>

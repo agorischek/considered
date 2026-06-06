@@ -1,0 +1,114 @@
+---
+import "../styles/considered.css";
+
+const {
+  title = "Considered",
+  description = "Repository policy and decision documentation for codebases.",
+  current = "/",
+} = Astro.props;
+
+const nav = [
+  {
+    heading: "Start",
+    links: [
+      { href: "/", label: "Overview" },
+      { href: "/quick-start/", label: "Quick start" },
+    ],
+  },
+  {
+    heading: "Guides",
+    links: [
+      { href: "/configuration/", label: "Configuration" },
+      { href: "/variances/", label: "Variances" },
+      { href: "/exclusions/", label: "Exclusions" },
+      { href: "/providers/", label: "Providers" },
+      { href: "/ci/", label: "CI" },
+    ],
+  },
+  {
+    heading: "Reference",
+    links: [{ href: "/reference/", label: "CLI reference" }],
+  },
+];
+
+const siteName = "Considered";
+const documentTitle = current === "/" ? siteName : `${title} - ${siteName}`;
+const flatLinks = nav.flatMap((section) => section.links);
+const currentIndex = flatLinks.findIndex((link) => link.href === current);
+const previous = currentIndex > 0 ? flatLinks[currentIndex - 1] : undefined;
+const next =
+  currentIndex >= 0 && currentIndex < flatLinks.length - 1
+    ? flatLinks[currentIndex + 1]
+    : undefined;
+const base = import.meta.env.BASE_URL;
+const withBase = (href: string) =>
+  href === "/" ? base : `${base.replace(/\/$/, "")}${href}`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{documentTitle}</title>
+    <link rel="icon" type="image/png" href={withBase("/logo.png")} />
+  </head>
+  <body>
+    <div class="site-shell">
+      <aside class="sidebar" aria-label="Documentation navigation">
+        <a class="brand" href={withBase("/")}>
+          <img src={withBase("/logo.png")} alt="Considered" height="34" />
+        </a>
+        <nav class="nav">
+          {
+            nav.map((section) => (
+              <section class="nav-section">
+                <h2>{section.heading}</h2>
+                <ul>
+                  {section.links.map((link) => (
+                    <li>
+                      <a
+                        class:list={["nav-link", { active: link.href === current }]}
+                        href={withBase(link.href)}
+                        aria-current={link.href === current ? "page" : undefined}
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))
+          }
+        </nav>
+        <a class="repo-link" href="https://github.com/agorischek/considered"
+          >GitHub</a
+        >
+      </aside>
+      <main class="page">
+        <slot />
+        {
+          current !== "/" && (
+            <nav class="page-turn" aria-label="Page navigation">
+              {previous ? (
+                <a href={withBase(previous.href)}>
+                  <span>Previous</span>
+                  {previous.label}
+                </a>
+              ) : (
+                <span />
+              )}
+              {next && (
+                <a href={withBase(next.href)}>
+                  <span>Next</span>
+                  {next.label}
+                </a>
+              )}
+            </nav>
+          )
+        }
+      </main>
+    </div>
+  </body>
+</html>

@@ -2,6 +2,7 @@ exclude:
     gitignored: true
     categories:
         - assets
+        - generated
     paths:
         - "**/*_test.go"
         - bin/**
@@ -17,14 +18,6 @@ standards:
         max: 140
 
 variances:
-    README.md:
-        kind: architectural
-        reason: >
-            Markdown tables and example blocks read more clearly on single
-            lines than wrapped to a column limit.
-        metrics:
-            filesystem.longest_line:
-                max: 151
     internal/considered/report.go:
         kind: architectural
         reason: >
