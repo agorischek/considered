@@ -147,20 +147,39 @@ func TestLoadConfigAcceptsLegacyExcludePathList(t *testing.T) {
 
 func TestExcludeCategoriesAndPaths(t *testing.T) {
 	cfg := Config{Exclude: ExcludeConfig{
-		Categories: []string{"assets", "documentation", "generated", "tests", "vendored", "dependencies"},
+		Categories: []string{"assets", "configuration", "documentation", "generated", "tests", "vendored", "dependencies"},
 		Paths:      []string{"src/generated/**"},
 	}}
 	excluded := []string{
+		".considered.yaml",
+		".editorconfig",
+		".eslintrc.cjs",
+		".github/CODEOWNERS",
+		".github/dependabot.yml",
+		".prettierrc",
 		"branding/studio-primer.svg",
 		"bun.lock",
 		"Cargo.lock",
 		"CHANGELOG.md",
 		"CODE_OF_CONDUCT.md",
 		"CONTRIBUTING.md",
+		"astro.config.mjs",
+		"biome.jsonc",
+		"deno.jsonc",
+		"docs/package.json",
+		"eslint.config.js",
+		"go.mod",
+		"jsconfig.node.json",
 		"LICENSE",
+		"next.config.mjs",
 		"NOTICE.txt",
+		"package.json",
 		"README.md",
+		"pyproject.toml",
 		"SECURITY.md",
+		"tailwind.config.ts",
+		"tsconfig.json",
+		"vite.config.ts",
 		".github/PULL_REQUEST_TEMPLATE.md",
 		"docs/guide.md",
 		"manual/reference.rst",
@@ -192,6 +211,9 @@ func TestExcludeCategoriesAndPaths(t *testing.T) {
 	}
 	if cfg.IsExcluded("src/main.go") {
 		t.Fatal("src/main.go should not be excluded")
+	}
+	if cfg.IsExcluded(".github/workflows/ci.yml") {
+		t.Fatal("GitHub workflows should not be excluded by the configuration category")
 	}
 }
 

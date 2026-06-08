@@ -18,6 +18,7 @@ import DocsLayout from "../layouts/DocsLayout.astro";
   gitignored: true
   categories:
     - assets
+    - configuration
     - documentation
     - generated
     - tests
@@ -38,6 +39,14 @@ import DocsLayout from "../layouts/DocsLayout.astro";
         <tr>
           <td><code>assets</code></td>
           <td>Static assets, images, fonts, PDFs, design files, audio, and video.</td>
+        </tr>
+        <tr>
+          <td><code>configuration</code></td>
+          <td>
+            Tool and package configuration files whose shape is imposed by
+            another system, such as package.json, tsconfig, go.mod, Cargo.toml,
+            pyproject.toml, and .considered.yaml.
+          </td>
         </tr>
         <tr>
           <td><code>documentation</code></td>
@@ -68,5 +77,13 @@ import DocsLayout from "../layouts/DocsLayout.astro";
       conventions that are meaningful to one repository but too specific for a
       built-in category.
     </p>
+
+    <div class="note">
+      <p>
+        GitHub Actions workflows are intentionally not part of the
+        <code>configuration</code> category. They are YAML, but they often behave
+        more like operational programs than static tool settings.
+      </p>
+    </div>
   </article>
 </DocsLayout>

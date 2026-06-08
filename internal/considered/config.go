@@ -13,8 +13,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var BuiltInKinds = []string{"architectural", "debt", "generated"}
-
 var excludeCategoryPatterns = map[string][]string{
 	"assets": {
 		"assets/**",
@@ -76,6 +74,7 @@ var excludeCategoryPatterns = map[string][]string{
 		"env/**",
 		"**/env/**",
 	},
+	"configuration": configurationExcludePatterns,
 	"documentation": documentationExcludePatterns,
 	"generated": {
 		"bun.lock",
