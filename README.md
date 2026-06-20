@@ -2,7 +2,8 @@
 
 # Considered
 
-Considered is a repository policy and decision documentation tool.
+Considered is a CLI that lets you set codebase standards (e.g. file line counts) 
+and explicitly document exceptions.
 
 It collects metrics from one or more providers, evaluates them against declared
 standards, and reports violations. Intentional departures are documented as
