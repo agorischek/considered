@@ -108,6 +108,7 @@ func TestLoadAndSaveConfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, ConfigName)
 	cfg := DefaultConfig()
+	cfg.Instructions = "Keep provider output deterministic.\nDocument new metrics."
 	cfg.Variances["x.go"] = Variance{
 		Kind:   "generated",
 		Reason: "Generated source is committed.",
@@ -127,6 +128,9 @@ func TestLoadAndSaveConfig(t *testing.T) {
 	}
 	if loaded.WarningThresholds.PercentBelowMax == nil || *loaded.WarningThresholds.PercentBelowMax != 10 {
 		t.Fatalf("warning threshold was not round-tripped: %#v", loaded.WarningThresholds)
+	}
+	if loaded.Instructions != cfg.Instructions {
+		t.Fatalf("instructions were not round-tripped: %q", loaded.Instructions)
 	}
 }
 

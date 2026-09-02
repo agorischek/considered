@@ -16,6 +16,7 @@ type Boundary struct {
 }
 
 type Config struct {
+	Instructions      string              `json:"instructions,omitempty" yaml:"instructions,omitempty"`
 	Kinds             []string            `json:"kinds,omitempty" yaml:"kinds,omitempty"`
 	Exclude           ExcludeConfig       `json:"exclude,omitempty" yaml:"exclude,omitempty"`
 	Standards         map[string]Boundary `json:"standards,omitempty" yaml:"standards,omitempty"`

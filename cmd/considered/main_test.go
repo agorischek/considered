@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"os"
 	"path/filepath"
@@ -77,6 +78,92 @@ func TestRunCheckWarningsDoNotFail(t *testing.T) {
 	})
 	if !strings.Contains(out, "Warnings") || !strings.Contains(out, "within 10% of max") {
 		t.Fatalf("expected warning output: %q", out)
+	}
+}
+
+func TestRunCheckPrintsInstructionsBeforeViolations(t *testing.T) {
+	dir := t.TempDir()
+	cfg := considered.Config{
+		Instructions: "Prefer small functions.\nPreserve public APIs.\n",
+		Standards: map[string]considered.Boundary{
+			"filesystem.bytes": {Max: considered.Float64(2)},
+		},
+		Variances: map[string]considered.Variance{},
+	}
+	if err := considered.SaveConfig(filepath.Join(dir, considered.ConfigName), cfg); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("abc"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	out := captureStdout(t, func() {
+		if code := run([]string{"check", "--root", dir}); code != 1 {
+			t.Fatalf("check exit code = %d", code)
+		}
+	})
+	want := "Instructions: Prefer small functions.\nPreserve public APIs.\n\nViolations"
+	if !strings.Contains(out, want) {
+		t.Fatalf("instructions were not printed before violations: %q", out)
+	}
+}
+
+func TestRunCheckJSONRemainsMachineReadableWithInstructions(t *testing.T) {
+	dir := t.TempDir()
+	cfg := considered.Config{
+		Instructions: "Prefer small functions.",
+		Standards: map[string]considered.Boundary{
+			"filesystem.bytes": {Max: considered.Float64(100)},
+		},
+		Variances: map[string]considered.Variance{},
+	}
+	if err := considered.SaveConfig(filepath.Join(dir, considered.ConfigName), cfg); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("abc"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	out := captureStdout(t, func() {
+		if code := run([]string{"check", "--root", dir, "--json"}); code != 0 {
+			t.Fatalf("check exit code = %d", code)
+		}
+	})
+	var report considered.Report
+	if err := json.Unmarshal([]byte(out), &report); err != nil {
+		t.Fatalf("check output is not valid JSON: %v\n%s", err, out)
+	}
+}
+
+func TestRunInstructions(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, considered.ConfigName)
+	cfg := considered.Config{
+		Instructions: "Prefer small functions.\nPreserve public APIs.\n",
+		Standards:    map[string]considered.Boundary{},
+		Variances:    map[string]considered.Variance{},
+	}
+	if err := considered.SaveConfig(path, cfg); err != nil {
+		t.Fatal(err)
+	}
+	out := captureStdout(t, func() {
+		if code := run([]string{"instructions", "--config", path}); code != 0 {
+			t.Fatalf("instructions exit code = %d", code)
+		}
+	})
+	if out != cfg.Instructions {
+		t.Fatalf("instructions output = %q", out)
+	}
+
+	cfg.Instructions = ""
+	if err := considered.SaveConfig(path, cfg); err != nil {
+		t.Fatal(err)
+	}
+	out = captureStdout(t, func() {
+		if code := run([]string{"instructions", "--root", dir}); code != 0 {
+			t.Fatalf("instructions exit code = %d", code)
+		}
+	})
+	if out != "(No instructions provided)\n" {
+		t.Fatalf("empty instructions output = %q", out)
 	}
 }
 
@@ -171,7 +258,7 @@ func captureStdout(t *testing.T, fn func()) string {
 
 func TestUsageIncludesCommands(t *testing.T) {
 	out := captureStdout(t, func() { usage(os.Stdout) })
-	if !strings.Contains(out, "variance add") {
+	if !strings.Contains(out, "variance add") || !strings.Contains(out, "instructions") {
 		t.Fatalf("unexpected usage: %q", out)
 	}
 }

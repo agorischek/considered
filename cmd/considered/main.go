@@ -5,9 +5,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"strings"
 
 	"github.com/agorischek/considered/internal/considered"
 )
@@ -28,6 +30,8 @@ func run(args []string) int {
 		return runInit(args[1:])
 	case "check":
 		return runCheck(args[1:])
+	case "instructions":
+		return runInstructions(args[1:])
 	case "variance":
 		return runVariance(args[1:])
 	case "version", "--version", "-v":
@@ -96,6 +100,12 @@ func runCheck(args []string) int {
 	case *sarifOut:
 		err = considered.WriteSARIF(os.Stdout, report)
 	default:
+		if cfg.Instructions != "" {
+			if err := writeInstructions(os.Stdout, cfg.Instructions, true); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return 2
+			}
+		}
 		err = considered.WriteText(os.Stdout, report)
 	}
 	if err != nil {
@@ -106,6 +116,51 @@ func runCheck(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runInstructions(args []string) int {
+	fs := flag.NewFlagSet("instructions", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	root := fs.String("root", ".", "repository root")
+	configPath := fs.String("config", "", "configuration file")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	cfg, err := considered.LoadConfig(resolveConfigPath(*root, *configPath))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
+	}
+	if cfg.Instructions == "" {
+		fmt.Fprintln(os.Stdout, "(No instructions provided)")
+		return 0
+	}
+	if err := writeInstructions(os.Stdout, cfg.Instructions, false); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
+	}
+	return 0
+}
+
+func writeInstructions(out io.Writer, instructions string, prefixed bool) error {
+	if prefixed {
+		if _, err := fmt.Fprint(out, "Instructions: "); err != nil {
+			return err
+		}
+	}
+	if _, err := fmt.Fprint(out, instructions); err != nil {
+		return err
+	}
+	if !strings.HasSuffix(instructions, "\n") {
+		if _, err := fmt.Fprintln(out); err != nil {
+			return err
+		}
+	}
+	if prefixed {
+		_, err := fmt.Fprintln(out)
+		return err
+	}
+	return nil
 }
 
 func runVariance(args []string) int {
@@ -167,6 +222,7 @@ func usage(out *os.File) {
 Commands:
   init              create .considered.yaml
   check             evaluate repository standards
+  instructions      print instructions for coding agents
   variance add      add a documented variance
   version           print the version`)
 }

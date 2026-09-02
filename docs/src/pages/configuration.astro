@@ -12,10 +12,14 @@ import DocsLayout from "../layouts/DocsLayout.astro";
     <p>
       The configuration file is <code>.considered.yaml</code> at the repository
       root. It defines the standards to evaluate, the files to exclude, and any
-      reviewed variances.
+      reviewed variances, and optional guidance for coding agents.
     </p>
 
-    <pre><code>kinds:
+    <pre><code>instructions: |
+  Prefer small, focused changes.
+  Preserve public APIs unless a variance explains the change.
+
+kinds:
   - performance
   - compatibility
 
@@ -45,6 +49,14 @@ standards:
 warnings:
   percentBelowMax: 10
   percentAboveMin: 10</code></pre>
+
+    <h2>Instructions</h2>
+    <p>
+      <code>instructions</code> is optional free-form text, primarily intended
+      for coding agents. A text <code>considered check</code> prints it before
+      violations. Run <code>considered instructions</code> to print only this
+      content.
+    </p>
 
     <h2>Kinds</h2>
     <p>
