@@ -47,10 +47,28 @@ the selected branch and dispatches `Release` with that tag. Manual tag pushes
 also trigger `Release`. Manual dispatch accepts an existing version tag only.
 
 Stable releases update `quitepicky/homebrew-tap` and open a version-specific PR
-from `quitepicky/winget-pkgs` to Microsoft. Prereleases publish GitHub assets but
-skip the package registries. Inspect the release run and confirm the WinGet PR
-exists: upstream PR creation errors may be reported by GoReleaser without failing
-the entire pipeline. WinGet becomes installable only after Microsoft accepts it.
+from `quitepicky/winget-pkgs` to Microsoft. GoReleaser leaves the GitHub release
+in draft until `scripts/verify-publication.mjs` verifies all seven assets, the
+matching Homebrew cask, and the upstream WinGet PR and installer manifest. A
+missing or rejected submission fails the workflow instead of relying on
+GoReleaser's warning behavior. Only then does the workflow publish the release,
+allowing Garden to mark its GitHub-release delivery complete. Prereleases verify
+GitHub assets but skip the package registries. WinGet is reported as submitted,
+not installable, until Microsoft accepts it.
+
+To check downstream acceptance and detect submissions stalled for over seven
+days, run `node scripts/verify-publication.mjs --monitor` with the same three
+tokens. It defaults to the latest GitHub release, or accepts `RELEASE_TAG`.
+The daily/manual `Publication health` workflow runs this check automatically,
+opens a deduplicated Garden attention item and Better Stack escalation on a new
+failure, and resolves the item after recovery. `GARDEN_PUBLICATION_KEY` is a
+dedicated Bitting-issued key with `garden:read`, `garden:run`, and `garden:elevate`
+permissions, not `garden:admin`; it cannot change Garden's maintenance policies.
+The release workflow also reports failures immediately. Renew publishing tokens
+before their expiry (currently December 4, 2026); monitor failures also detect
+expired credentials even when no new release is attempted.
+Keep failed releases in draft while repairing publication, then rerun the
+existing tag's Release workflow; do not create a new version to hide a failure.
 
 ## Install
 
