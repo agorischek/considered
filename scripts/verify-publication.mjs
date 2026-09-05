@@ -95,6 +95,26 @@ export async function verifyPublication(
     !cask.includes("github.com/quitepicky/considered")
   )
     throw new Error("Homebrew cask does not match this release");
+  // Parse the generated declarative entries without executing Ruby from the tap.
+  const downloads = [
+    ...cask.matchAll(/sha256\s+"([a-f0-9]{64})"\s+url\s+"([^"]+)"/g),
+  ];
+  for (const asset of release.assets.filter((asset) =>
+    /_(darwin|linux)_/.test(asset.name),
+  )) {
+    const url = `https://github.com/${repository}/releases/download/${tag}/${asset.name}`;
+    if (
+      !downloads.some(
+        ([, checksum, location]) =>
+          location.replaceAll("#{version}", version) === url &&
+          asset.digest === `sha256:${checksum}`,
+      )
+    ) {
+      throw new Error(
+        `Homebrew download URL/checksum does not match release asset: ${asset.name}`,
+      );
+    }
+  }
 
   const pulls = await request(
     `/repos/microsoft/winget-pkgs/pulls?head=quitepicky:considered-${version}&base=master&state=all&per_page=100`,

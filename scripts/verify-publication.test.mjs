@@ -22,6 +22,8 @@ test("release retries only replace unpublished drafts", async () => {
 function fixture({
   missingAsset = false,
   caskVersion = "1.2.3",
+  caskTag = "v1.2.3",
+  caskChecksum = "a".repeat(64),
   pulls = true,
   state = "open",
   merged = null,
@@ -44,13 +46,21 @@ function fixture({
           name,
           size: 100,
           state: "uploaded",
+          digest: `sha256:${"a".repeat(64)}`,
         })),
       };
     if (path.includes("/contents/"))
       return {
         encoding: "base64",
         content: Buffer.from(
-          `version "${caskVersion}"\nbinary "considered-scc"\nhttps://github.com/quitepicky/considered`,
+          `version "${caskVersion}"\nbinary "considered-scc"\n` +
+            assets
+              .filter((name) => /_(darwin|linux)_/.test(name))
+              .map(
+                (name) =>
+                  `sha256 "${caskChecksum}"\nurl "https://github.com/quitepicky/considered/releases/download/${caskTag}/${name}"`,
+              )
+              .join("\n"),
         ).toString("base64"),
       };
     if (path.includes("/files?"))
@@ -99,6 +109,8 @@ test("validates submission separately from acceptance", async () => {
 for (const [name, options] of Object.entries({
   asset: { missingAsset: true },
   cask: { caskVersion: "1.2.2" },
+  staleCaskUrl: { caskTag: "v1.2.2" },
+  staleCaskChecksum: { caskChecksum: "b".repeat(64) },
   missingPr: { pulls: false },
   rejectedPr: { state: "closed" },
   manifest: { manifest: false },
