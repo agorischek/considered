@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/agorischek/considered/internal/considered"
+	"github.com/quitepicky/considered/internal/considered"
 	"github.com/boyter/scc/v3/processor"
 )
 

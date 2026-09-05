@@ -176,7 +176,7 @@ func WriteSARIF(w io.Writer, report Report) error {
 		Runs: []sarifRun{{
 			Tool: sarifTool{Driver: sarifDriver{
 				Name:           "Considered",
-				InformationURI: "https://github.com/agorischek/considered",
+				InformationURI: "https://github.com/quitepicky/considered",
 				Rules:          rules,
 			}},
 			Results: results,

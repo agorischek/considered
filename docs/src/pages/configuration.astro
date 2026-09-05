@@ -12,7 +12,13 @@ import DocsLayout from "../layouts/DocsLayout.astro";
     <p>
       The configuration file is <code>.considered.yaml</code> at the repository
       root. It defines the standards to evaluate, the files to exclude, and any
-      reviewed variances, and optional guidance for coding agents.
+      reviewed variances. It can also include guidance for coding agents.
+    </p>
+
+    <p>
+      This example enables all exclusion categories. The starter written by
+      <code>considered init</code> enables only <code>tests</code>,
+      <code>vendored</code>, and <code>dependencies</code>, plus gitignored files.
     </p>
 
     <pre><code>instructions: |
@@ -75,7 +81,9 @@ warnings:
       Warnings report passing values that are close to a boundary.
       <code>percentBelowMax: 10</code> warns when a passing value is at least
       90% of a max boundary. <code>percentAboveMin: 10</code> warns when a
-      passing value is at most 110% of a min boundary.
+      passing value is at most 110% of a min boundary. Percentages must be
+      between 0 and 100. Omit a threshold to disable that warning direction;
+      percentage warnings apply only to positive boundaries.
     </p>
 
     <div class="note">

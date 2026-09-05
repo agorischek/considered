@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/agorischek/considered/internal/considered"
+	"github.com/quitepicky/considered/internal/considered"
 )
 
 func TestRunInitAndCheck(t *testing.T) {

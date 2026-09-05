@@ -15,8 +15,36 @@ import DocsLayout from "../layouts/DocsLayout.astro";
       so both binaries must be on your <code>PATH</code>.
     </p>
 
+    <h2>Install on macOS with Homebrew</h2>
+    <pre><code>brew install --cask quitepicky/tap/considered</code></pre>
+    <p>The package installs both binaries together.</p>
+
+    <h2>Linux and manual macOS installation</h2>
+    <p>
+      Download the archive for your operating system and processor from
+      <a href="https://github.com/quitepicky/considered/releases/latest">GitHub Releases</a>.
+      Releases include Linux and macOS archives for <code>amd64</code> (x86-64)
+      and <code>arm64</code>. Compare the archive's SHA-256 hash with the release's
+      <code>checksums.txt</code>, extract it, and put both <code>considered</code>
+      and <code>considered-scc</code> on your <code>PATH</code>.
+    </p>
+
+    <h2>Windows</h2>
+    <p>
+      Download the Windows archive from
+      <a href="https://github.com/quitepicky/considered/releases">GitHub Releases</a>,
+      extract it, and add the directory containing both executables to your
+      <code>PATH</code>. Choose <code>amd64</code> for x64 or <code>arm64</code>
+      for Windows on Arm, and verify the archive against <code>checksums.txt</code>.
+      The WinGet submission for
+      <code>QuitePicky.Considered</code> is
+      <a href="https://github.com/microsoft/winget-pkgs/pull/430077">awaiting community review</a>.
+      Until it is accepted and indexed, use the release archive.
+    </p>
+
     <h2>Install from source</h2>
-    <pre><code>git clone --recurse-submodules https://github.com/agorischek/considered.git
+    <p>Requires Git and Go 1.26 or newer, with the vendored submodule initialized.</p>
+    <pre><code>git clone --recurse-submodules https://github.com/quitepicky/considered.git
 cd considered
 go build -o bin/considered ./cmd/considered
 go build -o bin/considered-scc ./cmd/considered-scc</code></pre>

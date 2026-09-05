@@ -9,12 +9,12 @@ import DocsLayout from "../layouts/DocsLayout.astro";
 >
   <section class="hero">
     <span class="eyebrow">Repository policy</span>
-    <h1>Make standards visible. Keep exceptions considered.</h1>
+    <h1>Enforce standards, document exceptions</h1>
     <p class="lede">
       Considered evaluates repository metrics against declared standards and
-      records the reviewed reasons for intentional departures. The goal is not
-      just enforcement. It is preserving architectural judgment where future
-      maintainers can find it.
+      records intentional exceptions with their reasons. Keep the policy and
+      the decisions behind it in your repository, and enforce them locally and
+      in CI.
     </p>
     <div class="actions">
       <a class="button primary" href="quick-start/">Start checking</a>
@@ -59,12 +59,12 @@ import DocsLayout from "../layouts/DocsLayout.astro";
         also be reported as non-failing warnings.
       </li>
       <li>
-        If the value exceeds the standard, Considered checks for a variance on
+        If the value falls outside the standard, Considered checks for a variance on
         the exact subject and metric.
       </li>
       <li>
         A value inside the variance boundary passes as a visible variance. A
-        missing or exceeded variance is a violation.
+        missing or out-of-range variance is a violation.
       </li>
     </ol>
   </section>

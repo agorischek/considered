@@ -11,8 +11,11 @@ import DocsLayout from "../layouts/DocsLayout.astro";
     <h1>Variances</h1>
     <p>
       Variances are not suppressions. They are reviewed departures from a
-      standard, attached to exact subjects with required rationale. A variance
-      remains visible in every report.
+      standard, attached to exact subjects with required rationale. When a value
+      falls outside its standard but stays inside its approved boundary, the report
+      lists it as a passing variance. If it falls outside that boundary too, the report
+      lists a violation with the variance's rationale. Values that return within
+      the original standard no longer appear as variances.
     </p>
 
     <pre><code>variances:
@@ -31,8 +34,8 @@ import DocsLayout from "../layouts/DocsLayout.astro";
 
     <h2>Exact subjects</h2>
     <p>
-      Variances target exact repository-relative paths. The MVP intentionally
-      avoids variance globs so each departure maps to one reviewed file.
+      Variances target exact repository-relative paths, not glob patterns, so
+      each departure maps to one reviewed file.
     </p>
 
     <h2>Per-metric reasons</h2>
@@ -50,7 +53,10 @@ import DocsLayout from "../layouts/DocsLayout.astro";
 
     <p>
       Adding a variance for a value that already satisfies its standard is
-      rejected. The command is for reviewed exceptions, not noise.
+      rejected. Excluded subjects are also rejected. Omit the subject, metric,
+      kind, or reason to enter it interactively; <code>--metric-reason</code> is
+      optional. Adding another metric to the same subject preserves its other
+      metric overrides, but can replace the subject's overall kind and reason.
     </p>
   </article>
 </DocsLayout>

@@ -37,11 +37,15 @@ considered check --sarif</code></pre>
   --subject &lt;path&gt; \
   --metric &lt;metric&gt; \
   --kind &lt;kind&gt; \
-  --reason &lt;reason&gt; \
-  --metric-reason &lt;reason&gt;</code></pre>
+  --reason &lt;reason&gt;</code></pre>
+    <p>
+      Add <code>--metric-reason &lt;reason&gt;</code> for an optional metric-specific
+      explanation. Missing subject, metric, kind, and reason values are prompted
+      for interactively.
+    </p>
 
     <h2><code>considered version</code></h2>
-    <p>Prints the CLI version.</p>
+    <p>Prints the CLI version. <code>--version</code> and <code>-v</code> are aliases.</p>
 
     <h2>Common flags</h2>
     <table>
@@ -54,11 +58,15 @@ considered check --sarif</code></pre>
       <tbody>
         <tr>
           <td><code>--root &lt;dir&gt;</code></td>
-          <td>Repository root. Defaults to the current directory.</td>
+          <td>For init, check, instructions, and variance add. Defaults to the current directory.</td>
         </tr>
         <tr>
           <td><code>--config &lt;file&gt;</code></td>
-          <td>Explicit config path. Defaults to <code>&lt;root&gt;/.considered.yaml</code>.</td>
+          <td>
+            For check, instructions, and variance add. Defaults to
+            <code>&lt;root&gt;/.considered.yaml</code>. An explicit relative path
+            is resolved from the current working directory.
+          </td>
         </tr>
       </tbody>
     </table>
