@@ -14,11 +14,24 @@ explicit and preserve the rationale behind unusual structures.
 
 ## Quick Start
 
+Install the published release with Homebrew:
+
+```sh
+brew install --cask quitepicky/tap/considered
+```
+
+This installs both `considered` and `considered-scc`. Release archives are also
+available from [GitHub Releases](https://github.com/quitepicky/considered/releases).
+WinGet support is configured as `QuitePicky.Considered`; it becomes available
+after the first manifest submission is accepted into the community repository.
+
+### Build from source
+
 Requires Go 1.26+. This repository vendors [`scc`](https://github.com/boyter/scc)
 as a git submodule, so clone with submodules:
 
 ```sh
-git clone --recurse-submodules https://github.com/agorischek/considered.git
+git clone --recurse-submodules https://github.com/quitepicky/considered.git
 cd considered
 go build -o bin/considered ./cmd/considered
 go build -o bin/considered-scc ./cmd/considered-scc
@@ -33,7 +46,8 @@ considered check
 
 ## Documentation
 
-The full guide lives in the Astro docs site under [`docs/`](docs/):
+The full guide is at [considered.quitepicky.dev](https://considered.quitepicky.dev).
+The Astro documentation source lives under [`docs/`](docs/):
 
 ```sh
 cd docs
@@ -53,9 +67,11 @@ git tag v0.1.1
 git push origin v0.1.1
 ```
 
-The release workflow builds `considered` and `considered-scc` together for
+GoReleaser builds `considered` and `considered-scc` together for
 Linux, macOS, and Windows on amd64 and arm64. Each release includes platform
-archives plus `checksums.txt`.
+archives plus `checksums.txt`. Stable releases update the Quite Picky Homebrew
+tap and submit WinGet manifests. See [RELEASING.md](RELEASING.md) for credentials,
+validation, and the Garden release workflow.
 
 ## Design Principles
 

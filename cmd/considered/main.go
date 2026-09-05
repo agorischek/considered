@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 
-	"github.com/agorischek/considered/internal/considered"
+	"github.com/quitepicky/considered/internal/considered"
 )
 
 var versionOverride string

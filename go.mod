@@ -1,4 +1,4 @@
-module github.com/agorischek/considered
+module github.com/quitepicky/considered
 
 go 1.26
 

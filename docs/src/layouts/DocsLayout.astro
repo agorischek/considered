@@ -52,6 +52,7 @@ const withBase = (href: string) =>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{documentTitle}</title>
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
     <link rel="icon" type="image/png" href={withBase("/logo.png")} />
   </head>
   <body>
@@ -82,9 +83,10 @@ const withBase = (href: string) =>
             ))
           }
         </nav>
-        <a class="repo-link" href="https://github.com/agorischek/considered"
+        <a class="repo-link" href="https://github.com/quitepicky/considered"
           >GitHub</a
         >
+        <a class="repo-link" href="https://quitepicky.dev">A Quite Picky tool ↗</a>
       </aside>
       <main class="page">
         <slot />

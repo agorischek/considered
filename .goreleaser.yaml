@@ -1,0 +1,95 @@
+version: 2
+project_name: considered
+
+builds:
+  - id: considered
+    main: ./cmd/considered
+    binary: considered
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.versionOverride={{ .Tag }}
+  - id: considered-scc
+    main: ./cmd/considered-scc
+    binary: considered-scc
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags: [-s -w]
+
+archives:
+  - id: considered
+    ids: [considered, considered-scc]
+    name_template: "{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}"
+    wrap_in_directory: true
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+      - src: third_party/scc/LICENSE
+        dst: LICENSE-scc
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: quitepicky
+    name: considered
+  prerelease: auto
+
+changelog:
+  use: git
+  sort: asc
+
+homebrew_casks:
+  - name: considered
+    ids: [considered]
+    binaries: [considered, considered-scc]
+    homepage: https://considered.quitepicky.dev
+    description: Repository policy and decision documentation
+    skip_upload: auto
+    repository:
+      owner: quitepicky
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    url:
+      verified: github.com/quitepicky/considered/
+
+winget:
+  - name: Considered
+    package_name: Considered
+    publisher: Quite Picky
+    package_identifier: QuitePicky.Considered
+    ids: [considered]
+    path: "manifests/q/QuitePicky/Considered/{{ .Version }}"
+    homepage: https://considered.quitepicky.dev
+    publisher_url: https://quitepicky.dev
+    publisher_support_url: https://github.com/quitepicky/considered/issues
+    short_description: Repository policy and decision documentation
+    description: >-
+      Considered checks repository metrics against declared standards and records
+      reviewed exceptions with their rationale. Includes the considered CLI and
+      its bundled considered-scc metrics provider.
+    license: MIT
+    license_url: https://github.com/quitepicky/considered/blob/main/LICENSE
+    release_notes_url: "https://github.com/quitepicky/considered/releases/tag/{{ .Tag }}"
+    tags: [cli, developer-tools, code-quality, policy]
+    skip_upload: auto
+    repository:
+      owner: quitepicky
+      name: winget-pkgs
+      branch: "considered-{{ .Version }}"
+      token: "{{ .Env.WINGET_TOKEN }}"
+      pull_request:
+        enabled: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master

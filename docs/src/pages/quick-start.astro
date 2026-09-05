@@ -15,8 +15,22 @@ import DocsLayout from "../layouts/DocsLayout.astro";
       so both binaries must be on your <code>PATH</code>.
     </p>
 
+    <h2>Install with Homebrew</h2>
+    <pre><code>brew install --cask quitepicky/tap/considered</code></pre>
+    <p>The package installs both binaries together.</p>
+
+    <h2>Windows</h2>
+    <p>
+      Download the Windows archive from
+      <a href="https://github.com/quitepicky/considered/releases">GitHub Releases</a>,
+      extract it, and add the directory containing both executables to your
+      <code>PATH</code>. WinGet support is being prepared under
+      <code>QuitePicky.Considered</code>; it will be available after the first
+      community manifest submission is accepted.
+    </p>
+
     <h2>Install from source</h2>
-    <pre><code>git clone --recurse-submodules https://github.com/agorischek/considered.git
+    <pre><code>git clone --recurse-submodules https://github.com/quitepicky/considered.git
 cd considered
 go build -o bin/considered ./cmd/considered
 go build -o bin/considered-scc ./cmd/considered-scc</code></pre>

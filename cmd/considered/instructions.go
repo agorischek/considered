@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/agorischek/considered/internal/considered"
+	"github.com/quitepicky/considered/internal/considered"
 )
 
 func runInstructions(args []string) int {
