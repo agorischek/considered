@@ -1,14 +1,33 @@
 ---
 import DocsLayout from "../layouts/DocsLayout.astro";
 
-const githubActionsSnippet = `- name: Build providers
-  run: |
-    go build -o bin/considered ./cmd/considered
-    go build -o bin/considered-scc ./cmd/considered-scc
-
-- name: Considered check
-  run: |
-    PATH="\${GITHUB_WORKSPACE}/bin:\${PATH}" bin/considered check`;
+const githubActionsSnippet = `name: Repository standards
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  considered:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Considered
+        env:
+          CONSIDERED_VERSION: v0.1.10
+          CONSIDERED_SHA256: 75d94d4929f493dbaa4fba1904728ed41022e141b417b13931da17eca6b4c2ba
+        run: |
+          set -euo pipefail
+          tool_dir="$(mktemp -d)"
+          archive="considered_\${CONSIDERED_VERSION}_linux_amd64.tar.gz"
+          release="https://github.com/quitepicky/considered/releases/download/\${CONSIDERED_VERSION}"
+          curl --fail --location --silent --show-error "$release/$archive" -o "$tool_dir/$archive"
+          printf '%s  %s\\n' "$CONSIDERED_SHA256" "$tool_dir/$archive" | sha256sum --check -
+          tar -xzf "$tool_dir/$archive" -C "$tool_dir"
+          # Both binaries are inside the archive's versioned directory.
+          echo "$tool_dir/considered_\${CONSIDERED_VERSION}_linux_amd64" >> "$GITHUB_PATH"
+      - name: Check repository standards
+        run: considered check`;
 ---
 
 <DocsLayout
@@ -19,8 +38,9 @@ const githubActionsSnippet = `- name: Build providers
   <article class="doc">
     <h1>CI</h1>
     <p>
-      Considered exits non-zero only for violations or usage/configuration
-      errors. Variances and warnings stay visible without failing the check.
+      <code>considered check</code> exits non-zero for violations, invalid
+      configuration, provider failures, and other execution errors. Variances
+      and warnings stay visible without failing the check.
     </p>
 
     <h2>Exit codes</h2>
@@ -42,10 +62,16 @@ const githubActionsSnippet = `- name: Build providers
         </tr>
         <tr>
           <td><code>2</code></td>
-          <td>Usage or configuration error.</td>
+          <td>Usage, configuration, provider, or output error.</td>
         </tr>
       </tbody>
     </table>
+
+    <p>
+      These codes describe <code>considered check</code>. Commands that write
+      configuration, such as <code>init</code> and <code>variance add</code>,
+      return <code>1</code> when the requested write or variance cannot be completed.
+    </p>
 
     <h2>Machine-readable output</h2>
     <pre><code>considered check --json
@@ -53,10 +79,19 @@ considered check --sarif</code></pre>
 
     <p>
       In SARIF, violations are emitted as errors, warnings as warnings, and
-      variances as informational notes.
+      variances as informational notes. Choose either <code>--json</code> or
+      <code>--sarif</code>; using both is an error. Redirect stdout to a file when
+      saving a report. Diagnostics are written to stderr.
     </p>
 
     <h2>GitHub Actions</h2>
+    <p>
+      Commit your <code>.considered.yaml</code>, then save this workflow as
+      <code>.github/workflows/considered.yml</code> in the repository you want to
+      check. It installs the published Linux x64 release, verifies its checksum,
+      and adds both binaries to <code>PATH</code>. No Go build is required.
+      Update the version and checksum together when upgrading.
+    </p>
     <pre><code>{githubActionsSnippet}</code></pre>
   </article>
 </DocsLayout>

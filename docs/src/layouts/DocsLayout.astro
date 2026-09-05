@@ -5,6 +5,7 @@ const {
   title = "Considered",
   description = "Repository policy and decision documentation for codebases.",
   current = "/",
+  noindex = false,
 } = Astro.props;
 
 const nav = [
@@ -52,7 +53,9 @@ const withBase = (href: string) =>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{documentTitle}</title>
-    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    {noindex
+      ? <meta name="robots" content="noindex" />
+      : <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />}
     <link rel="icon" type="image/png" href={withBase("/logo.png")} />
   </head>
   <body>
@@ -91,7 +94,7 @@ const withBase = (href: string) =>
       <main class="page">
         <slot />
         {
-          current !== "/" && (
+          current !== "/" && currentIndex >= 0 && (
             <nav class="page-turn" aria-label="Page navigation">
               {previous ? (
                 <a href={withBase(previous.href)}>

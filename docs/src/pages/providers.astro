@@ -43,8 +43,20 @@ const providerOutput = `{
       named <code>considered-foo</code>.
     </p>
 
-    <pre><code>considered-foo --root &lt;dir&gt; --json</code></pre>
+    <pre><code>considered-foo --root &lt;dir&gt; --json --exclude-dir .git --exclude-dir node_modules</code></pre>
 
+    <p>
+      Providers must accept <code>--root</code>, <code>--json</code>, and repeated
+      <code>--exclude-dir</code> arguments. Considered passes directory exclusions
+      derived from the configuration, including <code>.git</code>, so providers
+      can skip those directories before collecting metrics. The exact list
+      depends on the repository's exclusions.
+    </p>
+    <p>
+      Print only the JSON result to stdout. Send diagnostics to stderr and exit
+      non-zero on failure. Considered runs the providers referenced by configured
+      standards; an unavailable or failed provider makes the check fail.
+    </p>
     <p>The provider prints JSON to stdout:</p>
 
     <pre><code>{providerOutput}</code></pre>
