@@ -1,5 +1,17 @@
 ---
 import DocsLayout from "../layouts/DocsLayout.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+
+const buildCommands = `git clone --recurse-submodules https://github.com/quitepicky/considered.git
+cd considered
+go build -o bin/considered ./cmd/considered
+go build -o bin/considered-scc ./cmd/considered-scc`;
+
+const varianceCommand = `considered variance add \\
+  --subject src/parser/grammar.ts \\
+  --metric scc.code_lines \\
+  --kind architectural \\
+  --reason "Grammar definitions are intentionally centralized."`;
 ---
 
 <DocsLayout
@@ -16,7 +28,7 @@ import DocsLayout from "../layouts/DocsLayout.astro";
     </p>
 
     <h2>Install on macOS with Homebrew</h2>
-    <pre><code>brew install --cask quitepicky/tap/considered</code></pre>
+    <CodeBlock lang="bash" code={"brew install --cask quitepicky/tap/considered"} />
     <p>The package installs both binaries together.</p>
 
     <h2>Linux and manual macOS installation</h2>
@@ -44,10 +56,7 @@ import DocsLayout from "../layouts/DocsLayout.astro";
 
     <h2>Install from source</h2>
     <p>Requires Git and Go 1.26 or newer, with the vendored submodule initialized.</p>
-    <pre><code>git clone --recurse-submodules https://github.com/quitepicky/considered.git
-cd considered
-go build -o bin/considered ./cmd/considered
-go build -o bin/considered-scc ./cmd/considered-scc</code></pre>
+    <CodeBlock lang="bash" code={buildCommands} />
 
     <p>
       Put both binaries somewhere on your <code>PATH</code>, or add the local
@@ -55,25 +64,21 @@ go build -o bin/considered-scc ./cmd/considered-scc</code></pre>
     </p>
 
     <h2>Initialize a repository</h2>
-    <pre><code>considered init</code></pre>
+    <CodeBlock lang="bash" code={"considered init"} />
     <p>
       This writes a starter <code>.considered.yaml</code> to the repository root.
       It fails if one already exists.
     </p>
 
     <h2>Run a check</h2>
-    <pre><code>considered check</code></pre>
+    <CodeBlock lang="bash" code={"considered check"} />
     <p>
       The text report separates failing violations from passing variances and
       near-boundary warnings.
     </p>
 
     <h2>Add a variance</h2>
-    <pre><code>considered variance add \
-  --subject src/parser/grammar.ts \
-  --metric scc.code_lines \
-  --kind architectural \
-  --reason "Grammar definitions are intentionally centralized."</code></pre>
+    <CodeBlock lang="bash" code={varianceCommand} />
 
     <p>
       Considered captures the subject's current metric value as the approved

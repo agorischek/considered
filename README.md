@@ -1,4 +1,7 @@
-<img src="assets/logo.png" alt="Considered" height="72">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/wordmark-light.svg">
+  <img src="assets/wordmark.svg" alt="Considered" width="320">
+</picture>
 
 # Considered
 

@@ -1,27 +1,8 @@
 ---
 import DocsLayout from "../layouts/DocsLayout.astro";
----
+import CodeBlock from "../components/CodeBlock.astro";
 
-<DocsLayout
-  title="Configuration"
-  description="Understand the .considered.yaml configuration file."
-  current="/configuration/"
->
-  <article class="doc">
-    <h1>Configuration</h1>
-    <p>
-      The configuration file is <code>.considered.yaml</code> at the repository
-      root. It defines the standards to evaluate, the files to exclude, and any
-      reviewed variances. It can also include guidance for coding agents.
-    </p>
-
-    <p>
-      This example enables all exclusion categories. The starter written by
-      <code>considered init</code> enables only <code>tests</code>,
-      <code>vendored</code>, and <code>dependencies</code>, plus gitignored files.
-    </p>
-
-    <pre><code>instructions: |
+const configurationExample = `instructions: |
   Prefer small, focused changes.
   Preserve public APIs unless a variance explains the change.
 
@@ -54,7 +35,29 @@ standards:
 
 warnings:
   percentBelowMax: 10
-  percentAboveMin: 10</code></pre>
+  percentAboveMin: 10`;
+---
+
+<DocsLayout
+  title="Configuration"
+  description="Understand the .considered.yaml configuration file."
+  current="/configuration/"
+>
+  <article class="doc">
+    <h1>Configuration</h1>
+    <p>
+      The configuration file is <code>.considered.yaml</code> at the repository
+      root. It defines the standards to evaluate, the files to exclude, and any
+      reviewed variances. It can also include guidance for coding agents.
+    </p>
+
+    <p>
+      This example enables all exclusion categories. The starter written by
+      <code>considered init</code> enables only <code>tests</code>,
+      <code>vendored</code>, and <code>dependencies</code>, plus gitignored files.
+    </p>
+
+    <CodeBlock lang="yaml" code={configurationExample} />
 
     <h2>Instructions</h2>
     <p>

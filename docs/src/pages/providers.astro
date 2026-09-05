@@ -1,5 +1,6 @@
 ---
 import DocsLayout from "../layouts/DocsLayout.astro";
+import CodeBlock from "../components/CodeBlock.astro";
 
 const providerOutput = `{
   "metrics": [
@@ -43,7 +44,7 @@ const providerOutput = `{
       named <code>considered-foo</code>.
     </p>
 
-    <pre><code>considered-foo --root &lt;dir&gt; --json --exclude-dir .git --exclude-dir node_modules</code></pre>
+    <CodeBlock lang="bash" code={"considered-foo --root <dir> --json --exclude-dir .git --exclude-dir node_modules"} />
 
     <p>
       Providers must accept <code>--root</code>, <code>--json</code>, and repeated
@@ -59,7 +60,7 @@ const providerOutput = `{
     </p>
     <p>The provider prints JSON to stdout:</p>
 
-    <pre><code>{providerOutput}</code></pre>
+    <CodeBlock lang="json" code={providerOutput} />
 
     <p>
       <code>subject</code> is repository-relative. <code>provider</code> is

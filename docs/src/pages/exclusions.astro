@@ -1,5 +1,19 @@
 ---
 import DocsLayout from "../layouts/DocsLayout.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+
+const exclusionExample = `exclude:
+  gitignored: true
+  categories:
+    - assets
+    - configuration
+    - documentation
+    - generated
+    - tests
+    - vendored
+    - dependencies
+  paths:
+    - src/generated/**`;
 ---
 
 <DocsLayout
@@ -14,18 +28,7 @@ import DocsLayout from "../layouts/DocsLayout.astro";
       for semantic groups and paths for project-specific cases.
     </p>
 
-    <pre><code>exclude:
-  gitignored: true
-  categories:
-    - assets
-    - configuration
-    - documentation
-    - generated
-    - tests
-    - vendored
-    - dependencies
-  paths:
-    - src/generated/**</code></pre>
+    <CodeBlock lang="yaml" code={exclusionExample} />
 
     <h2>Built-in categories</h2>
     <table>
