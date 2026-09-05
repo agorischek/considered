@@ -1,5 +1,16 @@
 ---
 import DocsLayout from "../layouts/DocsLayout.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+
+const checkCommands = `considered check
+considered check --json
+considered check --sarif`;
+
+const varianceCommand = `considered variance add \\
+  --subject <path> \\
+  --metric <metric> \\
+  --kind <kind> \\
+  --reason <reason>`;
 ---
 
 <DocsLayout
@@ -18,9 +29,7 @@ import DocsLayout from "../layouts/DocsLayout.astro";
 
     <h2><code>considered check</code></h2>
     <p>Evaluates the repository against the configuration.</p>
-    <pre><code>considered check
-considered check --json
-considered check --sarif</code></pre>
+    <CodeBlock lang="bash" code={checkCommands} />
 
     <h2><code>considered instructions</code></h2>
     <p>
@@ -33,11 +42,7 @@ considered check --sarif</code></pre>
       Captures a metric value as an approved variance boundary and writes it to
       the configuration.
     </p>
-    <pre><code>considered variance add \
-  --subject &lt;path&gt; \
-  --metric &lt;metric&gt; \
-  --kind &lt;kind&gt; \
-  --reason &lt;reason&gt;</code></pre>
+    <CodeBlock lang="bash" code={varianceCommand} />
     <p>
       Add <code>--metric-reason &lt;reason&gt;</code> for an optional metric-specific
       explanation. Missing subject, metric, kind, and reason values are prompted
