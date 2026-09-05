@@ -1,2 +1,13 @@
-# Global ownership: every path requires review from @agorischek.
-* @agorischek
+# Routine code/dependency changes still require an approval and passing CI.
+# Garden may supply that approval only for its policy-authorized maintenance.
+# These trust-boundary files always require a human code owner; Garden has no bypass.
+/.github/ @agorischek
+/.goreleaser.yaml @agorischek
+/scripts/ @agorischek
+/AGENTS.md @agorischek
+/SECURITY.md @agorischek
+/.considered/ @agorischek
+/.considered.yaml @agorischek
+/considered.yml @agorischek
+/considered.yaml @agorischek
+/.gitmodules @agorischek

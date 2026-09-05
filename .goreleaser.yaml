@@ -39,6 +39,10 @@ checksum:
   name_template: checksums.txt
 
 release:
+  # Only the workflow's downstream-publication verifier may expose the release.
+  draft: true
+  use_existing_draft: true
+  replace_existing_artifacts: true
   github:
     owner: quitepicky
     name: considered
