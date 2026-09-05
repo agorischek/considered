@@ -1,6 +1,23 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { verifyPublication } from "./verify-publication.mjs";
+import { assertUnpublished, verifyPublication } from "./verify-publication.mjs";
+
+test("release retries only replace unpublished drafts", async () => {
+  await assertUnpublished("v1.2.3", async () => ({ draft: true }));
+  await assertUnpublished("v1.2.3", async () => {
+    throw Object.assign(new Error("missing"), { status: 404 });
+  });
+  await assert.rejects(
+    assertUnpublished("v1.2.3", async () => ({ draft: false })),
+    /already-published/,
+  );
+  await assert.rejects(
+    assertUnpublished("v1.2.3", async () => {
+      throw Object.assign(new Error("denied"), { status: 403 });
+    }),
+    /denied/,
+  );
+});
 
 function fixture({
   missingAsset = false,
@@ -14,7 +31,8 @@ function fixture({
     "checksums.txt",
     ...["darwin", "linux", "windows"].flatMap((os) =>
       ["amd64", "arm64"].map(
-        (arch) => `considered_v1.2.3_${os}_${arch}.${os === "windows" ? "zip" : "tar.gz"}`,
+        (arch) =>
+          `considered_v1.2.3_${os}_${arch}.${os === "windows" ? "zip" : "tar.gz"}`,
       ),
     ),
   ];
@@ -37,7 +55,12 @@ function fixture({
       };
     if (path.includes("/files?"))
       return manifest
-        ? [{ filename: "manifests/q/QuitePicky/Considered/1.2.3/QuitePicky.Considered.installer.yaml" }]
+        ? [
+            {
+              filename:
+                "manifests/q/QuitePicky/Considered/1.2.3/QuitePicky.Considered.installer.yaml",
+            },
+          ]
         : [];
     return pulls
       ? [
@@ -47,7 +70,10 @@ function fixture({
             merged_at: merged,
             created_at: "2026-09-05T00:00:00Z",
             html_url: "https://github.com/microsoft/winget-pkgs/pull/123",
-            head: { ref: "considered-1.2.3", repo: { full_name: "quitepicky/winget-pkgs" } },
+            head: {
+              ref: "considered-1.2.3",
+              repo: { full_name: "quitepicky/winget-pkgs" },
+            },
             base: { repo: { full_name: "microsoft/winget-pkgs" } },
           },
         ]
@@ -56,9 +82,17 @@ function fixture({
 }
 
 test("validates submission separately from acceptance", async () => {
-  assert.equal((await verifyPublication("v1.2.3", fixture())).winget, "submitted");
   assert.equal(
-    (await verifyPublication("v1.2.3", fixture({ state: "closed", merged: "2026-09-05" }))).winget,
+    (await verifyPublication("v1.2.3", fixture())).winget,
+    "submitted",
+  );
+  assert.equal(
+    (
+      await verifyPublication(
+        "v1.2.3",
+        fixture({ state: "closed", merged: "2026-09-05" }),
+      )
+    ).winget,
     "accepted",
   );
 });
@@ -74,7 +108,10 @@ for (const [name, options] of Object.entries({
 }
 test("escalates stale upstream submissions", async () => {
   await assert.rejects(
-    verifyPublication("v1.2.3", fixture(), { monitor: true, now: Date.parse("2026-09-13") }),
+    verifyPublication("v1.2.3", fixture(), {
+      monitor: true,
+      now: Date.parse("2026-09-13"),
+    }),
     /7 days/,
   );
 });

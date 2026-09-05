@@ -9,7 +9,10 @@ export async function garden(path, method = "GET", body) {
   if (!key) throw new Error("Missing GARDEN_PUBLICATION_KEY");
   const response = await fetch(`https://garden.gorischek.dev/api/v1${path}`, {
     method,
-    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+    headers: {
+      authorization: `Bearer ${key}`,
+      "content-type": "application/json",
+    },
     ...(body ? { body: JSON.stringify(body) } : {}),
     signal: AbortSignal.timeout(30_000),
   });
@@ -22,7 +25,9 @@ export async function reportOutcome(
   request = garden,
   runUrl = "https://github.com/quitepicky/considered/actions",
 ) {
-  const active = await request("/attention?repository=quitepicky%2Fconsidered&status=active");
+  const active = await request(
+    "/attention?repository=quitepicky%2Fconsidered&status=active",
+  );
   const existing = active.items?.find((item) => item.title === title);
   if (!error) {
     if (existing)
@@ -53,7 +58,9 @@ export async function reportOutcome(
     ).item;
   if (!existing?.description?.includes(marker)) {
     // Persist attention first; an unsuccessful escalation will retry next run.
-    await request("/elevate", "POST", { message: `${title}: ${error.message}\n${runUrl}`.slice(0, 2000) });
+    await request("/elevate", "POST", {
+      message: `${title}: ${error.message}\n${runUrl}`.slice(0, 2000),
+    });
   }
   if (item.description !== description + marker) {
     await request(`/attention/${item.id}`, "PATCH", {
@@ -70,10 +77,26 @@ export async function checkPublication({
 } = {}) {
   let error;
   try {
-    if (process.env.PUBLICATION_FAILURE) throw new Error(process.env.PUBLICATION_FAILURE);
+    if (process.env.PUBLICATION_FAILURE)
+      throw new Error(process.env.PUBLICATION_FAILURE);
     const tag =
-      process.env.RELEASE_TAG || (await readGithub("/repos/quitepicky/considered/releases/latest")).tag_name;
-    console.log(JSON.stringify(await verify(tag, readGithub, { monitor: true })));
+      process.env.RELEASE_TAG ||
+      (await readGithub("/repos/quitepicky/considered/releases/latest"))
+        .tag_name;
+    const releases = await readGithub(
+      "/repos/quitepicky/considered/releases?per_page=100",
+    );
+    const unfinished = releases.find(
+      (release) => release.draft && !release.prerelease,
+    );
+    if (unfinished) {
+      throw new Error(
+        `Release ${unfinished.tag_name} is still a draft awaiting verified publication`,
+      );
+    }
+    console.log(
+      JSON.stringify(await verify(tag, readGithub, { monitor: true })),
+    );
   } catch (failure) {
     error = failure;
   }
@@ -84,7 +107,10 @@ export async function checkPublication({
   if (error) throw error;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   checkPublication().catch((error) => {
     console.error(error.message);
     process.exitCode = 1;

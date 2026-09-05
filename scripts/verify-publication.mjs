@@ -13,12 +13,43 @@ export async function github(path, credential = "GITHUB_TOKEN") {
     },
     signal: AbortSignal.timeout(30_000),
   });
-  if (!response.ok) throw new Error(`GitHub ${response.status} for ${path}`);
+  if (!response.ok) {
+    const error = new Error(`GitHub ${response.status} for ${path}`);
+    error.status = response.status;
+    throw error;
+  }
   return response.json();
 }
 
-export async function verifyPublication(tag, request = github, { monitor = false, now = Date.now() } = {}) {
-  if (!/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?$/.test(tag ?? "")) {
+export async function assertUnpublished(tag, request = github) {
+  if (
+    !/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?$/.test(
+      tag ?? "",
+    )
+  ) {
+    throw new Error("Expected a v-prefixed semantic version");
+  }
+  let release;
+  try {
+    release = await request(`/repos/${repository}/releases/tags/${tag}`);
+  } catch (error) {
+    if (error.status === 404) return;
+    throw error;
+  }
+  if (!release.draft)
+    throw new Error(`Refusing to replace already-published release ${tag}`);
+}
+
+export async function verifyPublication(
+  tag,
+  request = github,
+  { monitor = false, now = Date.now() } = {},
+) {
+  if (
+    !/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?$/.test(
+      tag ?? "",
+    )
+  ) {
     throw new Error("Expected a v-prefixed semantic version");
   }
   const version = tag.slice(1);
@@ -29,18 +60,27 @@ export async function verifyPublication(tag, request = github, { monitor = false
     "checksums.txt",
     ...["darwin", "linux", "windows"].flatMap((os) =>
       ["amd64", "arm64"].map(
-        (arch) => `considered_${tag}_${os}_${arch}.${os === "windows" ? "zip" : "tar.gz"}`,
+        (arch) =>
+          `considered_${tag}_${os}_${arch}.${os === "windows" ? "zip" : "tar.gz"}`,
       ),
     ),
   ];
   for (const name of expectedAssets) {
     if (
-      !release.assets?.some((asset) => asset.name === name && asset.size > 0 && asset.state === "uploaded")
+      !release.assets?.some(
+        (asset) =>
+          asset.name === name && asset.size > 0 && asset.state === "uploaded",
+      )
     ) {
       throw new Error(`Missing or incomplete release asset: ${name}`);
     }
   }
-  if (tag.includes("-")) return { tag, release: release.html_url, distribution: "prerelease: GitHub only" };
+  if (tag.includes("-"))
+    return {
+      tag,
+      release: release.html_url,
+      distribution: "prerelease: GitHub only",
+    };
 
   const file = await request(
     "/repos/quitepicky/homebrew-tap/contents/Casks/considered.rb",
@@ -73,11 +113,25 @@ export async function verifyPublication(tag, request = github, { monitor = false
     "WINGET_TOKEN",
   );
   const manifestPrefix = `manifests/q/QuitePicky/Considered/${version}/`;
-  if (!files.some((file) => file.filename === `${manifestPrefix}QuitePicky.Considered.installer.yaml`)) {
-    throw new Error("WinGet submission does not contain this version's installer manifest");
+  if (
+    !files.some(
+      (file) =>
+        file.filename ===
+        `${manifestPrefix}QuitePicky.Considered.installer.yaml`,
+    )
+  ) {
+    throw new Error(
+      "WinGet submission does not contain this version's installer manifest",
+    );
   }
-  if (monitor && !pull.merged_at && now - Date.parse(pull.created_at) > 7 * 24 * 60 * 60_000) {
-    throw new Error(`WinGet submission has awaited acceptance for over 7 days: ${pull.html_url}`);
+  if (
+    monitor &&
+    !pull.merged_at &&
+    now - Date.parse(pull.created_at) > 7 * 24 * 60 * 60_000
+  ) {
+    throw new Error(
+      `WinGet submission has awaited acceptance for over 7 days: ${pull.html_url}`,
+    );
   }
   return {
     tag,
@@ -88,10 +142,21 @@ export async function verifyPublication(tag, request = github, { monitor = false
   };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   try {
-    const tag = process.env.RELEASE_TAG || (await github(`/repos/${repository}/releases/latest`)).tag_name;
-    const result = await verifyPublication(tag, github, { monitor: process.argv.includes("--monitor") });
+    const tag =
+      process.env.RELEASE_TAG ||
+      (await github(`/repos/${repository}/releases/latest`)).tag_name;
+    if (process.argv.includes("--preflight")) {
+      await assertUnpublished(tag);
+      process.exit(0);
+    }
+    const result = await verifyPublication(tag, github, {
+      monitor: process.argv.includes("--monitor"),
+    });
     console.log(JSON.stringify(result));
   } catch (error) {
     console.error(error.message);

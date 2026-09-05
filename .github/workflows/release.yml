@@ -57,6 +57,11 @@ jobs:
           node-version: 24
       - name: Test publication verifier
         run: node --test scripts/*.test.mjs
+      - name: Refuse to overwrite an already-published release
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/verify-publication.mjs --preflight
       - name: Release with GoReleaser
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:

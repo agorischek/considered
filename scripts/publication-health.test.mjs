@@ -1,6 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { reportOutcome } from "./publication-health.mjs";
+import { checkPublication, reportOutcome } from "./publication-health.mjs";
+
+test("does not resolve a failed draft by checking an older healthy release", async () => {
+  let reported;
+  await assert.rejects(
+    checkPublication({
+      readGithub: async (path) =>
+        path.includes("?per_page")
+          ? [{ tag_name: "v1.2.4", draft: true, prerelease: false }]
+          : { tag_name: "v1.2.3" },
+      verify: async () =>
+        assert.fail("older release must not hide unfinished publication"),
+      report: async (error) => {
+        reported = error;
+      },
+    }),
+    /v1.2.4.*draft/,
+  );
+  assert.match(reported.message, /draft/);
+});
 
 test("opens durable attention and escalates a new publication failure", async () => {
   const calls = [];
@@ -42,7 +61,14 @@ test("resolves attention after publication recovers", async () => {
   const calls = [];
   const request = async (...args) => {
     calls.push(args);
-    return { items: [{ id: "item", title: "Considered downstream publication needs attention" }] };
+    return {
+      items: [
+        {
+          id: "item",
+          title: "Considered downstream publication needs attention",
+        },
+      ],
+    };
   };
   await reportOutcome(null, request);
   assert.equal(calls[1][2].status, "resolved");
