@@ -1,0 +1,31 @@
+---
+import { Code } from "astro:components";
+import type { ComponentProps } from "astro/types";
+
+interface Props {
+  code: string;
+  lang: ComponentProps<typeof Code>["lang"];
+}
+
+const { code, lang } = Astro.props;
+const theme = {
+  name: "considered-ink",
+  type: "dark" as const,
+  colors: {
+    "editor.background": "#17201d",
+    "editor.foreground": "#f6efe1",
+  },
+  tokenColors: [
+    { scope: ["comment"], settings: { foreground: "#a1afa7" } },
+    { scope: ["string"], settings: { foreground: "#b8cea8" } },
+    { scope: ["keyword", "storage"], settings: { foreground: "#e5a99c" } },
+    { scope: ["constant.numeric", "constant.language"], settings: { foreground: "#e6c384" } },
+    { scope: ["entity.name", "support.function", "support.type.property-name"], settings: { foreground: "#a9cbd7" } },
+    { scope: ["variable", "support.variable"], settings: { foreground: "#d6bedb" } },
+    { scope: ["punctuation"], settings: { foreground: "#d0c8b9" } },
+    { scope: ["invalid"], settings: { foreground: "#ffb4a5" } },
+  ],
+};
+---
+
+<Code code={code} lang={lang} theme={theme} tabindex="0" aria-label={`${lang} code example`} />

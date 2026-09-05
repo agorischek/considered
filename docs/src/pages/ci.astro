@@ -1,5 +1,6 @@
 ---
 import DocsLayout from "../layouts/DocsLayout.astro";
+import CodeBlock from "../components/CodeBlock.astro";
 
 const githubActionsSnippet = `name: Repository standards
 on: [push, pull_request]
@@ -28,6 +29,9 @@ jobs:
           echo "$tool_dir/considered_\${CONSIDERED_VERSION}_linux_amd64" >> "$GITHUB_PATH"
       - name: Check repository standards
         run: considered check`;
+
+const outputCommands = `considered check --json
+considered check --sarif`;
 ---
 
 <DocsLayout
@@ -74,8 +78,7 @@ jobs:
     </p>
 
     <h2>Machine-readable output</h2>
-    <pre><code>considered check --json
-considered check --sarif</code></pre>
+    <CodeBlock lang="bash" code={outputCommands} />
 
     <p>
       In SARIF, violations are emitted as errors, warnings as warnings, and
@@ -92,6 +95,6 @@ considered check --sarif</code></pre>
       and adds both binaries to <code>PATH</code>. No Go build is required.
       Update the version and checksum together when upgrading.
     </p>
-    <pre><code>{githubActionsSnippet}</code></pre>
+    <CodeBlock lang="yaml" code={githubActionsSnippet} />
   </article>
 </DocsLayout>

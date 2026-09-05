@@ -61,35 +61,44 @@ const withBase = (href: string) =>
   <body>
     <div class="site-shell">
       <aside class="sidebar" aria-label="Documentation navigation">
-        <a class="brand" href={withBase("/")}>
-          <img src={withBase("/logo.png")} alt="Considered" height="34" />
-        </a>
-        <nav class="nav">
-          {
-            nav.map((section) => (
-              <section class="nav-section">
-                <h2>{section.heading}</h2>
-                <ul>
-                  {section.links.map((link) => (
-                    <li>
-                      <a
-                        class:list={["nav-link", { active: link.href === current }]}
-                        href={withBase(link.href)}
-                        aria-current={link.href === current ? "page" : undefined}
-                      >
-                        {link.label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))
-          }
-        </nav>
-        <a class="repo-link" href="https://github.com/quitepicky/considered"
-          >GitHub</a
-        >
-        <a class="repo-link" href="https://quitepicky.dev">A Quite Picky tool ↗</a>
+        <div class="sidebar-header">
+          <a class="brand" href={withBase("/")}>Considered</a>
+          <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" hidden>
+            <span class="menu-label">Menu</span>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path class="menu-bars" d="M3 5h14M3 10h14M3 15h14" />
+              <path class="menu-close" d="m4 4 12 12M16 4 4 16" />
+            </svg>
+          </button>
+        </div>
+        <div id="site-menu">
+          <nav class="nav" aria-label="Documentation">
+            {
+              nav.map((section) => (
+                <section class="nav-section">
+                  <h2>{section.heading}</h2>
+                  <ul>
+                    {section.links.map((link) => (
+                      <li>
+                        <a
+                          class:list={["nav-link", { active: link.href === current }]}
+                          href={withBase(link.href)}
+                          aria-current={link.href === current ? "page" : undefined}
+                        >
+                          {link.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+            }
+          </nav>
+          <a class="repo-link" href="https://github.com/quitepicky/considered"
+            >GitHub</a
+          >
+          <a class="repo-link" href="https://quitepicky.dev">A Quite Picky tool ↗</a>
+        </div>
       </aside>
       <main class="page">
         <slot />
@@ -117,3 +126,38 @@ const withBase = (href: string) =>
     </div>
   </body>
 </html>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>(".menu-toggle");
+  const menu = document.querySelector<HTMLElement>("#site-menu");
+  const label = document.querySelector<HTMLElement>(".menu-label");
+  const mobile = window.matchMedia("(max-width: 900px)");
+
+  if (toggle && menu && label) {
+    const setOpen = (open: boolean) => {
+      toggle.setAttribute("aria-expanded", String(open));
+      label.textContent = open ? "Close" : "Menu";
+      menu.hidden = mobile.matches && !open;
+    };
+    const syncViewport = () => {
+      const focused = document.activeElement;
+      toggle.hidden = !mobile.matches;
+      setOpen(false);
+      if (mobile.matches && focused && menu.contains(focused)) toggle.focus();
+      if (!mobile.matches && focused === toggle) {
+        document.querySelector<HTMLAnchorElement>(".brand")?.focus();
+      }
+    };
+    toggle.addEventListener("click", () => {
+      setOpen(toggle.getAttribute("aria-expanded") !== "true");
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && mobile.matches && toggle.getAttribute("aria-expanded") === "true") {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+    mobile.addEventListener("change", syncViewport);
+    syncViewport();
+  }
+</script>

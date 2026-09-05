@@ -1,5 +1,26 @@
 ---
 import DocsLayout from "../layouts/DocsLayout.astro";
+import CodeBlock from "../components/CodeBlock.astro";
+
+const varianceExample = `variances:
+  src/parser/grammar.ts:
+    kind: architectural
+    reason: >
+      Grammar definitions are intentionally centralized and easier to
+      understand in a single file.
+    metrics:
+      scc.code_lines:
+        max: 1274
+      scc.complexity:
+        max: 120
+        reason: >
+          Complexity is primarily driven by parser state generation.`;
+
+const varianceCommand = `considered variance add \\
+  --subject src/parser/grammar.ts \\
+  --metric scc.code_lines \\
+  --kind architectural \\
+  --reason "Grammar definitions are intentionally centralized."`;
 ---
 
 <DocsLayout
@@ -18,19 +39,7 @@ import DocsLayout from "../layouts/DocsLayout.astro";
       the original standard no longer appear as variances.
     </p>
 
-    <pre><code>variances:
-  src/parser/grammar.ts:
-    kind: architectural
-    reason: >
-      Grammar definitions are intentionally centralized and easier to
-      understand in a single file.
-    metrics:
-      scc.code_lines:
-        max: 1274
-      scc.complexity:
-        max: 120
-        reason: >
-          Complexity is primarily driven by parser state generation.</code></pre>
+    <CodeBlock lang="yaml" code={varianceExample} />
 
     <h2>Exact subjects</h2>
     <p>
@@ -45,11 +54,7 @@ import DocsLayout from "../layouts/DocsLayout.astro";
     </p>
 
     <h2>Adding from the CLI</h2>
-    <pre><code>considered variance add \
-  --subject src/parser/grammar.ts \
-  --metric scc.code_lines \
-  --kind architectural \
-  --reason "Grammar definitions are intentionally centralized."</code></pre>
+    <CodeBlock lang="bash" code={varianceCommand} />
 
     <p>
       Adding a variance for a value that already satisfies its standard is
