@@ -85,6 +85,15 @@ try {
         'package example' | Set-Content (Join-Path $fixture 'example.go')
         & (Join-Path $bin 'considered-scc.exe') --json --root $fixture
         if ($LASTEXITCODE -ne 0) { throw "considered-scc failed: $LASTEXITCODE" }
+        # The upstream validator also launches executables with no arguments.
+        $launches = foreach ($name in @('considered', 'considered-scc')) {
+            $process = Start-Process -FilePath (Join-Path $bin "$name.exe") -WorkingDirectory $fixture -PassThru `
+                -RedirectStandardOutput (Join-Path $out "$name-no-args.stdout.txt") `
+                -RedirectStandardError (Join-Path $out "$name-no-args.stderr.txt")
+            if (-not $process.WaitForExit(30000)) { $process.Kill(); throw "$name no-argument launch timed out" }
+            [pscustomobject]@{Executable=$name; ExitCode=$process.ExitCode}
+        }
+        ConvertTo-Json -InputObject @($launches) | Set-Content (Join-Path $out 'no-argument-launches.json')
     }
     Record-Step 'Install original manifest through WinGet' {
         if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
