@@ -103,6 +103,7 @@ function fixture({
             created_at: "2026-09-05T00:00:00Z",
             html_url: "https://github.com/microsoft/winget-pkgs/pull/123",
             head: {
+              sha: "abc123",
               ref: "considered-1.2.3",
               repo: { full_name: "quitepicky/winget-pkgs" },
             },
