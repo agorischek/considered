@@ -23,7 +23,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Diagnose immutable v0.1.11 publication
-        shell: pwsh
+        # Defender and Appx are native Windows PowerShell modules; avoid the
+        # stale compatibility-remoting session after Defender updates itself.
+        shell: powershell
         run: ./scripts/windows-release-diagnostics.ps1
       - name: Preserve diagnostic evidence even on failure
         if: always()

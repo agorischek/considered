@@ -76,7 +76,7 @@ try {
         if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
             Install-Module Microsoft.WinGet.Client -RequiredVersion 1.29.280 -Force -Repository PSGallery -Scope CurrentUser
             Import-Module Microsoft.WinGet.Client
-            Repair-WinGetPackageManager -AllUsers -Version 1.29.290
+            Repair-WinGetPackageManager -AllUsers -Version v1.29.290 -Verbose
             $env:PATH += ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
         }
         & winget --info
