@@ -21,6 +21,24 @@ export async function github(path, credential = "GITHUB_TOKEN") {
   return response.json();
 }
 
+export async function releaseForTag(tag, request = github) {
+  try {
+    return await request(`/repos/${repository}/releases/tags/${tag}`);
+  } catch (error) {
+    if (error.status !== 404) throw error;
+    // GitHub's tag endpoint returns published releases; drafts require listing.
+    for (let page = 1; page <= 10; page++) {
+      const releases = await request(
+        `/repos/${repository}/releases?per_page=100&page=${page}`,
+      );
+      const match = releases.find((release) => release.tag_name === tag);
+      if (match) return match;
+      if (releases.length < 100) throw error;
+    }
+    throw new Error("Release lookup exceeded its pagination limit");
+  }
+}
+
 export async function assertUnpublished(tag, request = github) {
   if (
     !/^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?$/.test(
@@ -31,7 +49,7 @@ export async function assertUnpublished(tag, request = github) {
   }
   let release;
   try {
-    release = await request(`/repos/${repository}/releases/tags/${tag}`);
+    release = await releaseForTag(tag, request);
   } catch (error) {
     if (error.status === 404) return;
     throw error;
@@ -53,7 +71,7 @@ export async function verifyPublication(
     throw new Error("Expected a v-prefixed semantic version");
   }
   const version = tag.slice(1);
-  const release = await request(`/repos/${repository}/releases/tags/${tag}`);
+  const release = await releaseForTag(tag, request);
   if (release.tag_name !== tag || (monitor && release.draft))
     throw new Error("Release identity/draft mismatch");
   const expectedAssets = [

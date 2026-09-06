@@ -28,6 +28,17 @@ jobs:
             echo '::error::Use a v-prefixed semantic version tag.'
             exit 1
           fi
+      # Recovery fixes come from the protected workflow commit, while binaries
+      # always build from the original immutable release tag below.
+      - name: Check out trusted publication controls
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Preserve publication controls outside the tagged source checkout
+        run: |
+          mkdir -p "$RUNNER_TEMP/considered-publication-tools"
+          cp scripts/*.mjs "$RUNNER_TEMP/considered-publication-tools/"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
@@ -56,12 +67,12 @@ jobs:
         with:
           node-version: 24
       - name: Test publication verifier
-        run: node --test scripts/*.test.mjs
+        run: node --test "$RUNNER_TEMP"/considered-publication-tools/*.test.mjs
       - name: Refuse to overwrite an already-published release
         env:
           RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: node scripts/verify-publication.mjs --preflight
+        run: node "$RUNNER_TEMP/considered-publication-tools/verify-publication.mjs" --preflight
       - name: Release with GoReleaser
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
         with:
@@ -78,7 +89,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
-        run: node scripts/verify-publication.mjs
+        run: node "$RUNNER_TEMP/considered-publication-tools/verify-publication.mjs"
       - name: Publish verified GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -89,4 +100,4 @@ jobs:
         env:
           GARDEN_PUBLICATION_KEY: ${{ secrets.GARDEN_PUBLICATION_KEY }}
           PUBLICATION_FAILURE: Considered release workflow failed; inspect this run and repair the existing tag before publishing.
-        run: node scripts/publication-health.mjs
+        run: node "$RUNNER_TEMP/considered-publication-tools/publication-health.mjs"
