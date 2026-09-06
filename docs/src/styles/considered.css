@@ -191,9 +191,15 @@ pre {
   color: var(--ink);
 }
 
+.repo-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 36px;
+}
+
 .repo-link {
   display: inline-block;
-  margin-top: 36px;
   border: 1px solid var(--rule);
   border-radius: 8px;
   padding: 9px 12px;
