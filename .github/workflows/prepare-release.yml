@@ -9,50 +9,31 @@ on:
         type: string
 
 permissions:
-  actions: write
-  contents: write
+  contents: read
+
+concurrency:
+  group: prepare-release
+  cancel-in-progress: false
 
 jobs:
   prepare:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: write
+      contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - name: Validate version
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          if ! printf '%s' "$VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "Garden version must be vMAJOR.MINOR.PATCH" >&2
-            exit 1
-          fi
-
-      - name: Ensure tag does not already exist
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          if git show-ref --verify --quiet "refs/tags/$VERSION"; then
-            echo "Tag $VERSION already exists locally" >&2
-            exit 1
-          fi
-          if git ls-remote --exit-code --tags origin "refs/tags/$VERSION" >/dev/null 2>&1; then
-            echo "Tag $VERSION already exists on origin" >&2
-            exit 1
-          fi
-
-      - name: Create and push tag
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$VERSION" -m "Release $VERSION"
-          git push origin "refs/tags/$VERSION"
-
-      - name: Dispatch release workflow
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Prepare or resume exact release
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           VERSION: ${{ inputs.version }}
-        run: gh workflow run release.yml --ref "$GITHUB_REF_NAME" -f tag="$VERSION"
+        run: node scripts/prepare-release.mjs
