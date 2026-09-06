@@ -208,8 +208,19 @@ pre {
 }
 
 .hero {
+  container-type: inline-size;
   border-bottom: 1px solid var(--rule);
   padding: 28px 0 44px;
+}
+
+.hero .hero-slogan {
+  /* Fit the longer phrase to the content width, including on narrow phones. */
+  font-size: min(5.2rem, 11.8cqi);
+}
+
+.hero-slogan span {
+  display: block;
+  white-space: nowrap;
 }
 
 .eyebrow {
