@@ -13,12 +13,20 @@ function Record-Step([string]$Name, [scriptblock]$Action) {
     try { & $Action } catch {
         $failures.Add("${Name}: $_")
         Write-Warning "${Name}: $_"
+        $_ | Format-List * -Force | Out-String | Write-Host
     }
 }
 
 try {
     Record-Step 'Defender health and signatures' {
-        $status = Get-MpComputerStatus
+        # The ARM runner's Defender WMI provider can still be starting up.
+        Start-Service WinDefend
+        for ($attempt = 0; $attempt -lt 3; $attempt++) {
+            try { $status = Get-MpComputerStatus; break } catch {
+                if ($attempt -eq 2) { throw }
+                Start-Sleep -Seconds 5
+            }
+        }
         $status | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $out 'defender-before.json')
         if (-not $status.RealTimeProtectionEnabled) {
             # Hosted runners may start with real-time monitoring disabled.
@@ -43,7 +51,8 @@ try {
     $archive = Join-Path $env:RUNNER_TEMP "considered_v0.1.11_windows_${arch}.zip"
     $expanded = Join-Path $env:RUNNER_TEMP 'considered-published-binaries'
     Record-Step 'Verify and scan published archive' {
-        Invoke-WebRequest "https://github.com/quitepicky/considered/releases/download/v0.1.11/considered_v0.1.11_windows_${arch}.zip" -OutFile $archive
+        $releaseBase = 'https://github.com/quitepicky/considered/releases/download/v0.1.11'
+        Invoke-WebRequest "$releaseBase/considered_v0.1.11_windows_${arch}.zip" -OutFile $archive
         $hash = (Get-FileHash $archive -Algorithm SHA256).Hash
         if ($hash -ne $expected[$arch]) { throw "Archive hash mismatch: $hash" }
         Start-MpScan -ScanType CustomScan -ScanPath $archive
@@ -67,7 +76,7 @@ try {
         if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
             Install-Module Microsoft.WinGet.Client -RequiredVersion 1.29.280 -Force -Repository PSGallery -Scope CurrentUser
             Import-Module Microsoft.WinGet.Client
-            Repair-WinGetPackageManager -AllUsers
+            Repair-WinGetPackageManager -AllUsers -Version 1.29.290
             $env:PATH += ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
         }
         & winget --info
@@ -76,8 +85,11 @@ try {
         if ($LASTEXITCODE -ne 0) { throw 'Unable to enable local manifests' }
         $manifest = Join-Path $out 'manifest'
         New-Item -ItemType Directory -Force $manifest | Out-Null
-        foreach ($name in @('QuitePicky.Considered.yaml', 'QuitePicky.Considered.installer.yaml', 'QuitePicky.Considered.locale.en-US.yaml')) {
-            Invoke-WebRequest "https://raw.githubusercontent.com/quitepicky/winget-pkgs/ac7f5565afba745a411fd551423525c1bd4791c3/manifests/q/QuitePicky/Considered/0.1.11/$name" -OutFile (Join-Path $manifest $name)
+        $manifestBase = 'https://raw.githubusercontent.com/quitepicky/winget-pkgs/' +
+            'ac7f5565afba745a411fd551423525c1bd4791c3/manifests/q/QuitePicky/Considered/0.1.11'
+        foreach ($suffix in @('yaml', 'installer.yaml', 'locale.en-US.yaml')) {
+            $name = "QuitePicky.Considered.$suffix"
+            Invoke-WebRequest "$manifestBase/$name" -OutFile (Join-Path $manifest $name)
         }
         & winget validate --manifest $manifest
         # 0x8A150028 is explicitly 'validation succeeded with warning'. Preserve
