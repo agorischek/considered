@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { checkPublication, garden, reportOutcome } from "./publication-health.mjs";
+import {
+  checkPublication,
+  garden,
+  reportOutcome,
+} from "./publication-health.mjs";
 
 test("monitor uses the machine API origin and refuses redirects", async (t) => {
   const previousKey = process.env.GARDEN_PUBLICATION_KEY;
@@ -40,7 +44,13 @@ test("opens durable attention and escalates a new publication failure", async ()
   const calls = [];
   const request = async (...args) => {
     calls.push(args);
-    return { items: [], item: { id: "item" } };
+    return args[1] === "POST" && args[0] === "/attention"
+      ? {
+          id: "item",
+          title: "Considered downstream publication needs attention",
+          comments: [],
+        }
+      : { items: [] };
   };
   await reportOutcome(new Error("missing WinGet PR"), request);
   assert.deepEqual(
