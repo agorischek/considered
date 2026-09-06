@@ -28,6 +28,7 @@ try {
             }
         }
         $status | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $out 'defender-before.json')
+        & "$PSScriptRoot/windows-defender-setup.ps1" -Evidence $out
         if (-not $status.RealTimeProtectionEnabled) {
             # Hosted runners may start with real-time monitoring disabled.
             # Strengthen protection in this disposable runner; never add exclusions.
@@ -51,7 +52,8 @@ try {
             }
         }
         $status = Get-MpComputerStatus
-        if (-not $status.RealTimeProtectionEnabled -or $status.AntivirusSignatureAge -gt 2) {
+        if (-not $status.RealTimeProtectionEnabled -or $status.AntivirusSignatureAge -gt 2 -or
+            -not $status.BehaviorMonitorEnabled -or -not $status.IoavProtectionEnabled) {
             throw 'Defender must be active with signatures no older than two days.'
         }
     }

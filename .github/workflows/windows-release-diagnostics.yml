@@ -9,6 +9,7 @@ on:
       - scripts/windows-standard-user.ps1
       - scripts/windows-standard-install.ps1
       - scripts/windows-full-scan.ps1
+      - scripts/windows-defender-setup.ps1
 
 permissions:
   contents: read
