@@ -39,6 +39,7 @@ function fixture({
   caskVersion = "1.2.3",
   caskTag = "v1.2.3",
   caskChecksum = "a".repeat(64),
+  failedValidation = false,
   pulls = true,
   state = "open",
   merged = null,
@@ -54,6 +55,12 @@ function fixture({
     ),
   ];
   return async (path) => {
+    if (path.includes("/check-runs?"))
+      return {
+        check_runs: failedValidation
+          ? [{ name: "03. URLs Validation", conclusion: "failure" }]
+          : [],
+      };
     if (path.includes("/releases/"))
       return {
         tag_name: "v1.2.3",
@@ -140,6 +147,15 @@ test("escalates stale upstream submissions", async () => {
       now: Date.parse("2026-09-13"),
     }),
     /7 days/,
+  );
+});
+test("escalates failed upstream validation without waiting seven days", async () => {
+  await assert.rejects(
+    verifyPublication("v1.2.3", fixture({ failedValidation: true }), {
+      monitor: true,
+      now: Date.parse("2026-09-06"),
+    }),
+    /WinGet validation failed/,
   );
 });
 test("rejects malformed tags before any requests", async () => {

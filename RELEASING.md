@@ -70,6 +70,13 @@ expired credentials even when no new release is attempted.
 Keep failed releases in draft while repairing publication, then rerun the
 existing tag's Release workflow; do not create a new version to hide a failure.
 
+The monitor also reports failed upstream WinGet checks, without waiting for the
+seven-day acceptance deadline. Its protected main-only job needs GitHub Contents
+write permission to see drafts: GitHub hides draft releases from read-only
+tokens. Release recovery uses reviewed publication scripts from the workflow
+commit, but always builds binaries from the original release tag; do not retag
+an interrupted release just to fix its publication tooling.
+
 ## Install
 
 ```sh

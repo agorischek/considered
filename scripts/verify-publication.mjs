@@ -171,6 +171,21 @@ export async function verifyPublication(
       `WinGet submission has awaited acceptance for over 7 days: ${pull.html_url}`,
     );
   }
+  if (monitor && !pull.merged_at) {
+    const checks = await request(
+      `/repos/microsoft/winget-pkgs/commits/${pull.head.sha}/check-runs?per_page=100`,
+      "WINGET_TOKEN",
+    );
+    const failed = checks.check_runs.filter((check) =>
+      ["failure", "timed_out", "action_required", "cancelled"].includes(
+        check.conclusion,
+      ),
+    );
+    if (failed.length) {
+      const names = failed.map((check) => check.name).join(", ");
+      throw new Error(`WinGet validation failed (${names}): ${pull.html_url}`);
+    }
+  }
   return {
     tag,
     release: release.html_url,
