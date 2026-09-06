@@ -4,7 +4,9 @@ on:
     - cron: '37 9 * * *'
   workflow_dispatch:
 permissions:
-  contents: read
+  # GitHub hides draft releases from read-only tokens. The monitor must see a
+  # failed draft rather than incorrectly clearing attention for an older release.
+  contents: write
 concurrency:
   group: publication-health
   cancel-in-progress: false

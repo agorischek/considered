@@ -1,6 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertUnpublished, verifyPublication } from "./verify-publication.mjs";
+import {
+  assertUnpublished,
+  releaseForTag,
+  verifyPublication,
+} from "./verify-publication.mjs";
+
+test("finds an unpublished draft when the tag endpoint returns 404", async () => {
+  const draft = { tag_name: "v1.2.3", draft: true, assets: [] };
+  const request = async (path) => {
+    if (path.includes("/tags/"))
+      throw Object.assign(new Error("missing"), { status: 404 });
+    return [draft];
+  };
+  assert.deepEqual(await releaseForTag("v1.2.3", request), draft);
+  await assertUnpublished("v1.2.3", request);
+});
 
 test("release retries only replace unpublished drafts", async () => {
   await assertUnpublished("v1.2.3", async () => ({ draft: true }));
@@ -24,6 +39,7 @@ function fixture({
   caskVersion = "1.2.3",
   caskTag = "v1.2.3",
   caskChecksum = "a".repeat(64),
+  failedValidation = false,
   pulls = true,
   state = "open",
   merged = null,
@@ -39,6 +55,12 @@ function fixture({
     ),
   ];
   return async (path) => {
+    if (path.includes("/check-runs?"))
+      return {
+        check_runs: failedValidation
+          ? [{ name: "03. URLs Validation", conclusion: "failure" }]
+          : [],
+      };
     if (path.includes("/releases/"))
       return {
         tag_name: "v1.2.3",
@@ -81,6 +103,7 @@ function fixture({
             created_at: "2026-09-05T00:00:00Z",
             html_url: "https://github.com/microsoft/winget-pkgs/pull/123",
             head: {
+              sha: "abc123",
               ref: "considered-1.2.3",
               repo: { full_name: "quitepicky/winget-pkgs" },
             },
@@ -125,6 +148,15 @@ test("escalates stale upstream submissions", async () => {
       now: Date.parse("2026-09-13"),
     }),
     /7 days/,
+  );
+});
+test("escalates failed upstream validation without waiting seven days", async () => {
+  await assert.rejects(
+    verifyPublication("v1.2.3", fixture({ failedValidation: true }), {
+      monitor: true,
+      now: Date.parse("2026-09-06"),
+    }),
+    /WinGet validation failed/,
   );
 });
 test("rejects malformed tags before any requests", async () => {
