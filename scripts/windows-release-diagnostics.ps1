@@ -41,7 +41,19 @@ try {
         if (-not $status.AntivirusEnabled -or -not $status.RealTimeProtectionEnabled) {
             throw 'Defender is not active on this runner; this cannot establish a clean result.'
         }
-        Update-MpSignature
+        # A platform update may restart Defender and interrupt the first RPC.
+        # Retry the update, then require fresh signatures; never ignore scan errors.
+        for ($attempt = 0; $attempt -lt 3; $attempt++) {
+            try { Update-MpSignature; break } catch {
+                if ($attempt -eq 2) { throw }
+                Write-Warning "Signature update interrupted; retrying: $_"
+                Start-Sleep -Seconds 10
+            }
+        }
+        $status = Get-MpComputerStatus
+        if (-not $status.RealTimeProtectionEnabled -or $status.AntivirusSignatureAge -gt 2) {
+            throw 'Defender must be active with signatures no older than two days.'
+        }
     }
     $arch = if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq 'Arm64') { 'arm64' } else { 'amd64' }
     $expected = @{
