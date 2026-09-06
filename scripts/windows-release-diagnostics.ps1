@@ -20,6 +20,16 @@ try {
     Record-Step 'Defender health and signatures' {
         $status = Get-MpComputerStatus
         $status | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $out 'defender-before.json')
+        if (-not $status.RealTimeProtectionEnabled) {
+            # Hosted runners may start with real-time monitoring disabled.
+            # Strengthen protection in this disposable runner; never add exclusions.
+            Set-MpPreference -DisableRealtimeMonitoring $false
+            for ($attempt = 0; $attempt -lt 10; $attempt++) {
+                $status = Get-MpComputerStatus
+                if ($status.RealTimeProtectionEnabled) { break }
+                Start-Sleep -Seconds 2
+            }
+        }
         if (-not $status.AntivirusEnabled -or -not $status.RealTimeProtectionEnabled) {
             throw 'Defender is not active on this runner; this cannot establish a clean result.'
         }
@@ -70,7 +80,9 @@ try {
             Invoke-WebRequest "https://raw.githubusercontent.com/quitepicky/winget-pkgs/ac7f5565afba745a411fd551423525c1bd4791c3/manifests/q/QuitePicky/Considered/0.1.11/$name" -OutFile (Join-Path $manifest $name)
         }
         & winget validate --manifest $manifest
-        if ($LASTEXITCODE -ne 0) { throw "Manifest validation failed: $LASTEXITCODE" }
+        # 0x8A150028 is explicitly 'validation succeeded with warning'. Preserve
+        # its output, but do not let schema-comment warnings prevent installation.
+        if ($LASTEXITCODE -notin @(0, -1978335192)) { throw "Manifest validation failed: $LASTEXITCODE" }
         & winget install --manifest $manifest --accept-package-agreements --accept-source-agreements --disable-interactivity --verbose-logs
         if ($LASTEXITCODE -ne 0) { throw "WinGet installation failed: $LASTEXITCODE" }
         $links = Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet\Links'
