@@ -7,8 +7,9 @@ const repositoryFullName = "quitepicky/considered";
 export async function garden(path, method = "GET", body) {
   const key = process.env.GARDEN_PUBLICATION_KEY;
   if (!key) throw new Error("Missing GARDEN_PUBLICATION_KEY");
-  const response = await fetch(`https://garden.gorischek.dev/api/v1${path}`, {
+  const response = await fetch(`https://garden-api.gorischek.dev/api/v1${path}`, {
     method,
+    redirect: "error",
     headers: {
       authorization: `Bearer ${key}`,
       "content-type": "application/json",
@@ -17,6 +18,9 @@ export async function garden(path, method = "GET", body) {
     signal: AbortSignal.timeout(30_000),
   });
   if (!response.ok) throw new Error(`Garden ${response.status} for ${path}`);
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new Error(`Garden returned a non-JSON response for ${path}`);
+  }
   return response.json();
 }
 

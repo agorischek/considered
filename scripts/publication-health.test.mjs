@@ -1,6 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { checkPublication, reportOutcome } from "./publication-health.mjs";
+import { checkPublication, garden, reportOutcome } from "./publication-health.mjs";
+
+test("monitor uses the machine API origin and refuses redirects", async (t) => {
+  const previousKey = process.env.GARDEN_PUBLICATION_KEY;
+  process.env.GARDEN_PUBLICATION_KEY = "test-only-key";
+  t.after(() => {
+    if (previousKey === undefined) delete process.env.GARDEN_PUBLICATION_KEY;
+    else process.env.GARDEN_PUBLICATION_KEY = previousKey;
+  });
+  t.mock.method(globalThis, "fetch", async (url, options) => {
+    assert.equal(new URL(url).origin, "https://garden-api.gorischek.dev");
+    assert.equal(options.redirect, "error");
+    return Response.json({ items: [] });
+  });
+  assert.deepEqual(await garden("/attention"), { items: [] });
+});
 
 test("does not resolve a failed draft by checking an older healthy release", async () => {
   let reported;
