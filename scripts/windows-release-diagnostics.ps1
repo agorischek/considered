@@ -115,12 +115,18 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "Installed considered failed: $LASTEXITCODE" }
         Start-MpScan -ScanType CustomScan -ScanPath (Join-Path $env:LOCALAPPDATA 'Microsoft\WinGet')
     }
+    Record-Step 'Standard-user installation' {
+        & "$PSScriptRoot/windows-standard-user.ps1" -Manifest (Join-Path $out 'manifest') -Evidence $out
+    }
+    Record-Step 'Full post-install Defender scan' {
+        & "$PSScriptRoot/windows-full-scan.ps1" -Evidence $out
+    }
 } finally {
     Record-Step 'Capture Defender findings' {
         Get-MpComputerStatus | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $out 'defender-after.json')
         $detections = @(Get-MpThreatDetection)
-        $detections | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $out 'defender-detections.json')
-        Get-MpThreat | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $out 'defender-threats.json')
+        ConvertTo-Json -InputObject $detections -Depth 8 | Set-Content (Join-Path $out 'defender-detections.json')
+        ConvertTo-Json -InputObject @(Get-MpThreat) -Depth 8 | Set-Content (Join-Path $out 'defender-threats.json')
         if ($detections.Count -gt 0) { $failures.Add('Defender reported threat detections; see evidence.') }
     }
     # Absence of events is normal; command errors are recorded in the transcript.
@@ -133,7 +139,7 @@ try {
     )) {
         if (Test-Path $logs) { Copy-Item $logs (Join-Path $out ([guid]::NewGuid().ToString())) -Recurse }
     }
-    $failures | ConvertTo-Json | Set-Content (Join-Path $out 'failures.json')
+    ConvertTo-Json -InputObject $failures.ToArray() | Set-Content (Join-Path $out 'failures.json')
     Stop-Transcript
 }
 if ($failures.Count -gt 0) { throw ($failures -join "`n") }
