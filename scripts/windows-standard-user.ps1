@@ -6,6 +6,11 @@ $password = ConvertTo-SecureString ('Aa1!' + [guid]::NewGuid().ToString('N')) -A
 $account = New-LocalUser -Name $accountName -Password $password -Description 'Disposable installation diagnostic'
 $shared = Join-Path $env:PUBLIC ('considered-test-' + [guid]::NewGuid().ToString('N'))
 try {
+    # Machine policy applies to the fresh account; runner-local admin settings do not.
+    # See microsoft/winget-cli doc/admx/DesktopAppInstaller.admx.
+    $policy = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppInstaller'
+    New-Item -Path $policy -Force | Out-Null
+    New-ItemProperty -Path $policy -Name EnableLocalManifestFiles -PropertyType DWord -Value 1 -Force | Out-Null
     Add-LocalGroupMember -SID 'S-1-5-32-545' -Member $account.Name
     New-Item -ItemType Directory $shared | Out-Null
     $acl = Get-Acl $shared
