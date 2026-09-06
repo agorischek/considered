@@ -118,9 +118,6 @@ try {
     Record-Step 'Standard-user installation' {
         & "$PSScriptRoot/windows-standard-user.ps1" -Manifest (Join-Path $out 'manifest') -Evidence $out
     }
-    Record-Step 'Full post-install Defender scan' {
-        & "$PSScriptRoot/windows-full-scan.ps1" -Evidence $out
-    }
 } finally {
     Record-Step 'Capture Defender findings' {
         Get-MpComputerStatus | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $out 'defender-after.json')

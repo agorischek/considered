@@ -30,6 +30,18 @@ jobs:
         # stale compatibility-remoting session after Defender updates itself.
         shell: powershell
         run: ./scripts/windows-release-diagnostics.ps1
+      - name: Preserve installation evidence before full scan
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: installation-evidence-${{ matrix.runner }}
+          path: ${{ runner.temp }}/considered-diagnostics
+          retention-days: 7
+          if-no-files-found: error
+      - name: Full post-install Defender scan
+        if: always()
+        shell: powershell
+        run: ./scripts/windows-full-scan.ps1 -Evidence "$env:RUNNER_TEMP/considered-diagnostics"
       - name: Preserve diagnostic evidence even on failure
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
