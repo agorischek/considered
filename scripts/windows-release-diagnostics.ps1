@@ -87,11 +87,22 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "considered-scc failed: $LASTEXITCODE" }
         # The upstream validator also launches executables with no arguments.
         $launches = foreach ($name in @('considered', 'considered-scc')) {
-            $process = Start-Process -FilePath (Join-Path $bin "$name.exe") -WorkingDirectory $fixture -PassThru `
-                -RedirectStandardOutput (Join-Path $out "$name-no-args.stdout.txt") `
-                -RedirectStandardError (Join-Path $out "$name-no-args.stderr.txt")
+            # Own the process handle: Windows PowerShell Start-Process can lose
+            # ExitCode for a very short-lived process unless invoked with -Wait.
+            $process = New-Object System.Diagnostics.Process
+            $process.StartInfo.FileName = Join-Path $bin "$name.exe"
+            $process.StartInfo.WorkingDirectory = $fixture
+            $process.StartInfo.UseShellExecute = $false
+            $process.StartInfo.RedirectStandardOutput = $true
+            $process.StartInfo.RedirectStandardError = $true
+            [void]$process.Start()
+            $stdout = $process.StandardOutput.ReadToEndAsync()
+            $stderr = $process.StandardError.ReadToEndAsync()
             if (-not $process.WaitForExit(30000)) { $process.Kill(); throw "$name no-argument launch timed out" }
+            $stdout.GetAwaiter().GetResult() | Set-Content (Join-Path $out "$name-no-args.stdout.txt")
+            $stderr.GetAwaiter().GetResult() | Set-Content (Join-Path $out "$name-no-args.stderr.txt")
             [pscustomobject]@{Executable=$name; ExitCode=$process.ExitCode}
+            $process.Dispose()
         }
         ConvertTo-Json -InputObject @($launches) | Set-Content (Join-Path $out 'no-argument-launches.json')
     }
