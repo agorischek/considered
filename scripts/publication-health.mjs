@@ -7,16 +7,23 @@ const repositoryFullName = "quitepicky/considered";
 export async function garden(path, method = "GET", body) {
   const key = process.env.GARDEN_PUBLICATION_KEY;
   if (!key) throw new Error("Missing GARDEN_PUBLICATION_KEY");
-  const response = await fetch(`https://garden.gorischek.dev/api/v1${path}`, {
-    method,
-    headers: {
-      authorization: `Bearer ${key}`,
-      "content-type": "application/json",
+  const response = await fetch(
+    `https://garden-api.gorischek.dev/api/v1${path}`,
+    {
+      method,
+      redirect: "error",
+      headers: {
+        authorization: `Bearer ${key}`,
+        "content-type": "application/json",
+      },
+      ...(body ? { body: JSON.stringify(body) } : {}),
+      signal: AbortSignal.timeout(30_000),
     },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-    signal: AbortSignal.timeout(30_000),
-  });
+  );
   if (!response.ok) throw new Error(`Garden ${response.status} for ${path}`);
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new Error(`Garden returned a non-JSON response for ${path}`);
+  }
   return response.json();
 }
 
@@ -47,15 +54,13 @@ export async function reportOutcome(
   const marker = "\n\nBetter Stack escalation: accepted.";
   const item =
     existing ??
-    (
-      await request("/attention", "POST", {
-        title,
-        description,
-        priority: "high",
-        repositoryFullName,
-        externalUrl: runUrl,
-      })
-    ).item;
+    (await request("/attention", "POST", {
+      title,
+      description,
+      priority: "high",
+      repositoryFullName,
+      externalUrl: runUrl,
+    }));
   if (!existing?.description?.includes(marker)) {
     // Persist attention first; an unsuccessful escalation will retry next run.
     await request("/elevate", "POST", {
